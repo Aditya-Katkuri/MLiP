@@ -1,0 +1,27 @@
+# data and artifacts live in blob, never here
+data/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.zip
+*.parquet
+hf_cache/
+runs/
+wandb/
+
+# notebooks: strip outputs before committing
+.ipynb_checkpoints/
+
+# local
+.env
+.DS_Store
+__pycache__/
+*.egg-info/
+
+# never commit Azure config or keys to a public repo
+sidewalk-env.sh
+*.pem
+id_ed25519*
+id_rsa*
+*.pub
