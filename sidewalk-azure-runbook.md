@@ -271,6 +271,83 @@ If it happens:
 **While you wait, work on Colab Pro.** The Day 1 evaluation run and all five crop classifiers
 need no Azure at all.
 
+### 1.5 Exact portal steps (self-serve), then the support ticket
+
+Do these in order. The self-serve attempt takes two minutes and, if the automated
+system has changed its mind since 2026-09-10, saves you the ticket entirely.
+
+**A. Self-serve, via the Quotas blade**
+
+1. portal.azure.com → search **"Quotas"** in the top bar → open the **Quotas** service
+   (this is the newer blade; **Subscriptions → your sub → Usage + quotas** lands in the
+   same place).
+2. Left nav → **Compute**.
+3. Set the three filters at the top:
+   - **Subscription** = `Azure subscription 1`
+   - **Region** = `East US 2`
+   - **Provider** = `Microsoft.Compute`
+4. In the search box type `NCADS` — the row is **`Standard NCADS_A100_v4 Family vCPUs`**,
+   showing `0 / 0`. (Search `NCASv3` for the T4 row.) Note the underscores; the name in
+   the CLI is spelled differently, see 1.3.
+5. Tick the row's checkbox → **New Quota Request** → **Enter a new limit**.
+6. Enter **24** for the A100 (**8** for the T4). Submit.
+7. Repeat steps 3-6 with **Region = West US 3**, then **Region = Central US**.
+   Do all regions the same day — approval is per region and a rejection in one tells
+   you nothing about another.
+
+If it succeeds you will see the limit change within minutes. If you get
+*"Quota not available"* / `QuotaNotAvailableForResource`, or an instant rejection,
+go to B. Do not keep retrying — it is refusing the subscription, not the request.
+
+**B. The support ticket (free, and the path that actually works)**
+
+Quota tickets are free on every subscription, including Free/Sponsored. You do **not**
+need a paid support plan.
+
+1. portal.azure.com → **Help + support** → **Create a support request**.
+2. **Issue type**: `Service and subscription limits (quotas)`.
+3. **Subscription**: `Azure subscription 1`.
+4. **Quota type**: `Compute-VM (cores-vCPUs) subscription limit increases`.
+5. **Next** → **Enter details**. In the details panel set:
+   - Deployment model: `Resource Manager`
+   - Location: `East US 2`
+   - SKU family: `NCADS_A100_v4 Series`
+   - New limit: `24`
+   - Add a second row for `East US 2` / `NCASv3_T4 Series` / `8`, and rows for
+     `West US 3` and `Central US` / `NCADS_A100_v4 Series` / `24`.
+6. **Severity**: `C - Minimal impact` is fine and does not slow quota tickets down.
+7. Paste the description below.
+8. Contact info → your email → **Create**.
+
+**What to write in the description box:**
+
+> Requesting a GPU vCPU quota increase for Carnegie Mellon University graduate
+> coursework (10-718 Machine Learning in Practice). We are fine-tuning a computer
+> vision model on street-level imagery for a semester project, using a single shared
+> VM for a four-person student team. Expected total spend is under $1,500 against
+> Microsoft for Startups credits.
+>
+> Requested: Standard NCADS_A100_v4 Family = 24 vCPUs (exactly one
+> Standard_NC24ads_A100_v4), in East US 2, with West US 3 and Central US as
+> alternatives if East US 2 has no capacity. Also Standard NCASv3_T4 Family = 8 vCPUs
+> in East US 2 as a lower-cost fallback.
+>
+> The self-serve quota request was already attempted and was rejected automatically
+> within seconds, returning QuotaNotAvailableForResource — including for the 8 vCPU
+> T4 request. Current limits are 0 for every GPU family. Total Regional vCPUs is
+> already 65, so no increase is needed there. I have confirmed via az vm list-skus
+> that Standard_NC24ads_A100_v4 is offered and unrestricted in all three regions
+> requested, so this is purely a quota question.
+>
+> If A100 capacity is unavailable, I would accept Spot/low-priority quota for the same
+> family instead. In that case please also raise Total Regional Low-priority vCPUs,
+> which is currently 3 and would otherwise block a 24 vCPU Spot deployment.
+
+That last paragraph matters: it gives the engineer a cheaper way to say yes, and it
+pre-empts the follow-up round trip about the low-priority ceiling.
+
+**C. If both fail**, fall back to CMU compute — see step 4 in 1.4.
+
 ---
 
 ## Part 2. Give your teammates access
@@ -308,6 +385,14 @@ Portal equivalent if you prefer clicking:
 > **Microsoft Entra ID** → **Users** → **New user** → **Invite external user**
 
 ### 2.3 Assign the role
+
+> **RBAC grants are silent.** Azure sends **no email** when you assign a role. The only
+> message a teammate receives is the guest invitation from 2.2. They will not be told
+> that they now have Contributor on the resource group or Storage Blob Data Contributor
+> on the storage account, and they cannot discover it without being told where to look.
+> Message the team yourself with: the subscription name, the resource group, the storage
+> account name, and which containers they can write to. Otherwise the first symptom is
+> someone hitting an opaque 403 and assuming the setup is broken.
 
 ```bash
 az role assignment create \
