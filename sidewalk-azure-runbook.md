@@ -213,6 +213,11 @@ which is also the ask most likely to be approved.
 | `Standard NCADS_A100_v4 Family vCPUs` | **24** | Central US | Third shot |
 | `Standard NCASv3_T4 Family vCPUs` | **8** | West US 3 | T4 backup |
 
+There is deliberately **no Central US T4 row**: `Standard_NC4as_T4_v3` is not offered in
+Central US at all (see the 1.1 table). In the portal that row renders as `0 of 0` with a
+disabled checkbox and a "Request access" icon rather than the usual pencil, which reads
+like a permissions problem but is really "this SKU does not exist here". Do not file it.
+
 File all of these on the **same day**, not one after another. Approval is per region and a
 rejection in one tells you nothing about another, so serial retries only burn calendar days.
 
@@ -229,6 +234,31 @@ any region checked in 1.1, so there is nothing to grant.
 
 Naming the institution and asking for a modest, specific amount reads far better than a vague
 large request.
+
+### 1.3a Outcome, 2026-09-10: all five self-serve requests rejected
+
+All five valid requests were submitted through the Quotas blade and **all five were
+rejected**. Nothing was auto-approved, including the 8 vCPU T4 asks that this doc
+expected to sail through.
+
+What the portal actually says — note it is *not* the CLI error, and it is not instant:
+
+> **Panel:** "We were unable to complete 1 request. To follow up on quota increase
+> requests, contact the support team."
+>
+> **Notification:** "We were unable to adjust your quota. Submit a support ticket so
+> that a support engineer can assist you in adjusting your quota for your Standard
+> NCADS_A100_v4 Family vCPUs in East US 2 for Azure subscription 1."
+
+Each took **one to two minutes**, and the Activity Log records each request as
+"Accepted" with no error code attached. The CLI path fails differently and faster:
+`az quota update` returns `QuotaNotAvailableForResource` in seconds. Two channels, two
+messages, same refusal — quote whichever one you actually saw when you open the ticket,
+and do not attribute the CLI code to the portal.
+
+That the trivial T4 ask was refused alongside the A100 is the informative part: the
+automated system is declining the **subscription**, not weighing the size of the
+request. Retrying regions is not going to help. Go to 1.5 step B.
 
 ### 1.4 How long approval takes
 

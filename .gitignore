@@ -25,3 +25,6 @@ sidewalk-env.sh
 id_ed25519*
 id_rsa*
 *.pub
+
+# scratch, not for the public repo (contains subscription id)
+temp/
