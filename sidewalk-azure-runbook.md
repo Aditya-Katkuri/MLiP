@@ -260,6 +260,38 @@ That the trivial T4 ask was refused alongside the A100 is the informative part: 
 automated system is declining the **subscription**, not weighing the size of the
 request. Retrying regions is not going to help. Go to 1.5 step B.
 
+### 1.3b Support ticket filed, 2026-09-10
+
+**Support request ID `2609100040010387`** — open, Severity C, issue type *Service and
+subscription limits (quotas)*, problem type *Compute-VM (cores-vCPUs) subscription
+limit increases*. Reply goes to adityak0030@gmail.com.
+
+All five rows were accepted in a **single ticket**, so there is no need to file one per
+region:
+
+| Region | SKU family (as the form labels it) | New limit |
+|---|---|---|
+| East US 2 | NC A100 v4 Series | 24 |
+| East US 2 | NCasT4v3 Series | 8 |
+| West US 3 | NC A100 v4 Series | 24 |
+| West US 3 | NCasT4v3 Series | 8 |
+| Central US | NC A100 v4 Series | 24 |
+
+Three things worth knowing for next time:
+
+- **The support form labels the family differently again.** It appears as
+  **"NC A100 v4 Series"** — a fourth spelling, after the CLI's `StandardNCADSA100v4Family`,
+  the portal quota blade's `Standard NCADS_A100_v4 Family vCPUs`, and this doc's original
+  wrong one. Do not confuse it with *ND A100 v4* (NDASv4) or *NDm A100 v4* (NDAMSv4),
+  which are different families entirely.
+- **This ticket flow has no description field.** The justification has to be posted as a
+  message on the ticket after it is created. Write it anyway — it is what a human reads.
+- **The subscription carries a Developer support plan**, so no upsell appeared. Developer
+  is business-hours, Severity C only, with an initial response target of 8 business hours.
+  Severity C was therefore the only available choice, not a compromise.
+
+No response time was displayed on the confirmation page. Expect roughly one business day.
+
 ### 1.4 How long approval takes
 
 | Request | Typical outcome |
