@@ -20,10 +20,23 @@ reports/     figures and tables for the writeup
 | Script | Runs on | What it does |
 |---|---|---|
 | `scripts/az_preflight.sh` | laptop | Asserts the isolated Azure CLI profile is active, then prints GPU SKU availability and current quota |
+| `scripts/hf_to_blob.py` | laptop | Copies a Hugging Face repo into blob **server-side** — Azure fetches from HF directly, no bytes through your machine. Use before the VM exists |
 | `scripts/setup_vm.sh` | VM | Formats/mounts the data disk, shared group, teammate accounts, base tooling |
 | `scripts/download_data.sh` | VM | Hugging Face → VM → Blob, so the download is never paid for twice |
 | `scripts/sync_run.sh` | VM | Pushes a run's checkpoints and results to Blob |
 | `scripts/make_manifest.py` | VM | Stamps a run with its git SHA |
+
+## Environment
+
+```bash
+conda env create -f environment.yml
+conda activate sidewalk
+```
+
+`environment.yml` is a superset of RampNet's own env (upstream name `sidewalkcv2`):
+their ML pins reproduced exactly, plus our Azure plumbing, `wandb`, and notebook
+tooling. Upstream pins `python=3.10`; we use `3.11`. If the solver fights you, drop
+to `3.10` — that is upstream's tested config.
 
 ## Where things live
 
@@ -39,6 +52,15 @@ reports/     figures and tables for the writeup
 
 Never commit checkpoints or datasets, and do not reach for git-lfs — we have blob
 storage, and lfs on a student repo hits quota limits fast.
+
+Concretely: **data lives in blob, code lives here, and the VM pulls both.** On the VM
+that is `azcopy login --identity` + `azcopy copy` for data (keyless, via the VM's
+managed identity — no keys or SAS tokens on a shared box) and `git clone` for code.
+
+Storage account: **`sidewalkdata23770`** (`eastus2`, Standard_LRS). All four of us hold
+`Storage Blob Data Contributor` on it — note that is a *separate* grant from
+`Contributor` on the resource group, which manages the account but cannot read or
+write a single blob.
 
 **This repo is public.** Nothing secret goes in it: no subscription IDs, no storage
 keys, no SAS tokens. Azure config lives in `~/sidewalk-env.sh` on each person's

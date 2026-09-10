@@ -75,13 +75,36 @@ If that does not print the Founders Hub subscription, stop and re-source.
 
 You start at **zero GPU vCPUs in every region**. Nothing can be created until this is approved.
 
+### 1.0 Register the resource providers first
+
+> **Verified 2026-09-10.** On a fresh subscription every provider starts `NotRegistered`, and
+> until they are registered `az vm list-usage` returns **zero rows** — not zero quota, *no rows
+> at all*. Because 1.2 below says "expect zeros" and pipes the output through `grep`, an
+> unregistered provider prints exactly the same thing as a real zero quota. Do this first or
+> you will file quota requests against a subscription that cannot report quota.
+
+```bash
+source ~/sidewalk-env.sh
+for ns in Microsoft.Compute Microsoft.Network Microsoft.Storage \
+          Microsoft.Quota Microsoft.ManagedIdentity; do
+  az provider register --namespace "$ns" --subscription "$AZ_SUB"
+done
+
+# registration is async, 1-3 min. Wait for all five to say Registered:
+az provider list --subscription "$AZ_SUB" \
+  --query "[?namespace=='Microsoft.Compute' || namespace=='Microsoft.Network' \
+           || namespace=='Microsoft.Storage' || namespace=='Microsoft.Quota' \
+           || namespace=='Microsoft.ManagedIdentity'].{ns:namespace, state:registrationState}" \
+  -o table
+```
+
 ### 1.1 Check which regions actually have the SKUs
 
 No point requesting quota where there is no capacity.
 
 ```bash
 source ~/sidewalk-env.sh
-for r in eastus2 southcentralus westus3 eastus centralus; do
+for r in eastus2 westus3 centralus southcentralus eastus northcentralus westus2; do
   echo "===== $r"
   az vm list-skus --location "$r" --resource-type virtualMachines \
     --subscription "$AZ_SUB" \
@@ -93,6 +116,25 @@ done
 A blank result means the SKU is not offered there. `NotAvailableForSubscription` means it exists
 but your subscription is not entitled. Either way, do not request quota in that region.
 
+**Measured 2026-09-10 on this subscription** (`Sponsored_2016-01-01`, sub `62173b9a`):
+
+| Region | `NC24ads_A100_v4` | `NC4as_T4_v3` | `NC40ads_H100_v5` |
+|---|---|---|---|
+| East US 2 | **yes** | yes | no |
+| West US 3 | **yes** | yes | no |
+| Central US | **yes** | no | no |
+| South Central US | **no** | yes | no |
+| East US | no | yes | no |
+| North Central US | no | yes | no |
+| West US 2 | no | yes | no |
+
+No restrictions flagged on any of the above, so availability is purely a quota question.
+
+Two consequences, and they change the plan in 1.3: **South Central US does not offer the A100
+at all**, so the "second shot" this doc originally sent there was unwinnable on availability
+rather than capacity. The real A100 regions are **East US 2, West US 3, and Central US**. And
+the H100 is offered in none of them, so the optional H100 ask has nothing to land on. Drop it.
+
 ### 1.2 See where you stand now (expect zeros)
 
 ```bash
@@ -101,13 +143,58 @@ az vm list-usage --location "$AZ_LOC" --subscription "$AZ_SUB" -o table \
 ```
 
 Note the **Total Regional vCPUs** line. It is a separate ceiling from the per-family quota, and
-if it is too low your approved A100 quota still will not deploy. Request both.
+if it is too low your approved A100 quota still will not deploy.
+
+**Measured 2026-09-10**, identical in East US 2, West US 3, and Central US:
+
+| Row | Current | Limit |
+|---|---|---|
+| `Standard NCADS_A100_v4 Family vCPUs` | 0 | **0** |
+| `Standard NCASv3_T4 Family vCPUs` | 0 | **0** |
+| `Total Regional vCPUs` | 0 | **65** |
+| `Total Regional Low-priority vCPUs` | 0 | **3** |
+
+So **Total Regional vCPUs is already 65** and does not need raising — the original ask of 48
+here was below what the subscription already had. One fewer request to file and wait on.
+
+The low-priority ceiling of **3** matters for the Spot fallback in 1.4: raising the A100 *family*
+quota alone will not let a Spot A100 deploy, because 24 vCPUs will not fit under a regional
+low-priority ceiling of 3. If you pivot to Spot, raise `Total Regional Low-priority vCPUs` to
+at least 24 as a separate request.
 
 ### 1.3 File the requests
 
 The portal is the reliable route. `az quota` exists but its syntax shifts between extension
 versions; if you want to try it, run `az extension add --name quota` then
 `az quota update --help` and verify against your version first.
+
+> **Attempted 2026-09-10 via CLI (quota extension 1.0.0), and it was auto-rejected.**
+>
+> ```bash
+> az quota update --resource-name "Standard NCASv3_T4 Family" \
+>   --scope "/subscriptions/$AZ_SUB/providers/Microsoft.Compute/locations/eastus2" \
+>   --limit-object value=8 --resource-type dedicated
+> # ERROR: (QuotaNotAvailableForResource) Request failed.
+> ```
+>
+> This was not a syntax problem: `az quota show` on the same `--resource-name` returns the row
+> fine (`isQuotaApplicable: true`, limit 0), and the failure is identical with and without
+> `--resource-type`. It is the sponsored-subscription auto-rejection described in 1.4, and it
+> came back in seconds — even for the *small T4 ask* that is normally rubber-stamped. Treat the
+> self-serve path (CLI and portal alike) as exhausted on this subscription and go straight to
+> the support ticket in 1.4 step 3.
+>
+> Note the name mismatch if you go hunting in the portal. Three different spellings are in play
+> for the same quota:
+>
+> | Where | String |
+> |---|---|
+> | CLI `--resource-name` | `StandardNCADSA100v4Family` |
+> | Portal / `localizedValue` | `Standard NCADS_A100_v4 Family vCPUs` |
+> | ~~What this doc used to say~~ | ~~`Standard NCADSA100v4 Family vCPUs`~~ (matches neither) |
+>
+> The T4 is `Standard NCASv3_T4 Family` in the CLI and `Standard NCASv3_T4 Family vCPUs` in the
+> portal.
 
 Portal path:
 
@@ -118,16 +205,21 @@ Portal path:
 Submit these. Since you want **one shared VM**, the A100 ask is exactly one machine's worth,
 which is also the ask most likely to be approved.
 
-| Quota row | New limit | Region | Why |
+| Quota row (portal spelling) | New limit | Region | Why |
 |---|---|---|---|
-| `Standard NCASv3_T4 Family vCPUs` | **8** | East US 2 | One T4 box. Almost always approved. Your insurance |
-| `Standard NCADSA100v4 Family vCPUs` | **24** | East US 2 | Exactly one `NC24ads_A100_v4`. The real target |
-| `Total Regional vCPUs` | **48** | East US 2 | Headroom so the above can actually deploy |
-| `Standard NCADSA100v4 Family vCPUs` | **24** | South Central US | Second shot. Approval is per region |
-| `Standard NCASv3_T4 Family vCPUs` | **8** | South Central US | Second shot |
+| `Standard NCASv3_T4 Family vCPUs` | **8** | East US 2 | One T4 box. Normally the easy one. Your insurance |
+| `Standard NCADS_A100_v4 Family vCPUs` | **24** | East US 2 | Exactly one `NC24ads_A100_v4`. The real target |
+| `Standard NCADS_A100_v4 Family vCPUs` | **24** | West US 3 | Second shot. Approval is per region |
+| `Standard NCADS_A100_v4 Family vCPUs` | **24** | Central US | Third shot |
+| `Standard NCASv3_T4 Family vCPUs` | **8** | West US 3 | T4 backup |
 
-Optional, costs nothing to ask: `Standard NCadsH100v5 Family vCPUs` = 40. Take it if it lands,
-but do not wait on it. See the note at the end of this section.
+File all of these on the **same day**, not one after another. Approval is per region and a
+rejection in one tells you nothing about another, so serial retries only burn calendar days.
+
+~~`Total Regional vCPUs` = 48 in East US 2~~ — **dropped**, it is already 65. See 1.2.
+
+~~Optional: `Standard NCadsH100v5 Family vCPUs` = 40~~ — **dropped**, the H100 is not offered in
+any region checked in 1.1, so there is nothing to grant.
 
 **What to write in the justification box:**
 
@@ -149,13 +241,29 @@ large request.
 
 **Expect the A100 request to possibly bounce.** Founders Hub and other benefit subscriptions are
 currently getting auto-rejections with a "high capacity, cannot approve" message, often within
-minutes. That is not a reflection on your request. If it happens:
+minutes. That is not a reflection on your request.
 
-1. Retry in the other region. Approval varies by region and by week.
+> **This is what happened, 2026-09-10.** The self-serve request was rejected in seconds with
+> `QuotaNotAvailableForResource` — and not just for the A100. The **8-vCPU T4** ask, the one
+> this table calls "almost always approved", was refused too. That pattern (even the trivial ask
+> bouncing instantly) says the automated system is refusing the *subscription*, not judging the
+> *request*. So step 1 below is not worth much here, and steps 3 and 4 are where the real
+> options are.
+
+If it happens:
+
+1. Retry in the other region. Approval varies by region and by week. (Of limited value if even
+   the small T4 ask was refused instantly — that is a subscription-level refusal.)
 2. Request **Spot / low-priority** quota for the same family. It is a separate, easier pool.
+   Remember from 1.2 that this needs *two* raises: the A100 family quota **and**
+   `Total Regional Low-priority vCPUs`, which starts at 3 and must reach at least 24.
 3. Open a free support ticket: portal → **Help + support** → **Create a support request** →
    Issue type **Service and subscription limits (quotas)**. This routes to a human instead of
-   the automated system and often succeeds where the self-serve flow failed.
+   the automated system and often succeeds where the self-serve flow failed. **Given the
+   instant auto-rejection above, this is now the primary path, not a fallback.** Use the
+   justification text below, and say explicitly that the self-serve request returned
+   `QuotaNotAvailableForResource` — it tells the engineer the automated route is already
+   exhausted and saves a round trip.
 4. Fall back to CMU compute. Your department has GPU clusters, and CMU students can get
    Pittsburgh Supercomputing Center Bridges-2 GPU hours through an ACCESS allocation, which is
    a short free application. For this project that may genuinely beat Azure.
@@ -206,9 +314,12 @@ az role assignment create \
   --assignee-object-id "PASTE_OBJECT_ID" \
   --assignee-principal-type User \
   --role "Contributor" \
-  --resource-group "$AZ_RG" \
-  --subscription "$AZ_SUB"
+  --scope "/subscriptions/$AZ_SUB/resourceGroups/$AZ_RG"
 ```
+
+> **Corrected 2026-09-10.** On azure-cli 2.89.1 this command rejects
+> `--resource-group`/`--subscription` here with `ERROR: the following arguments are
+> required: --scope`. Pass the full resource-group scope path instead, as above.
 
 `Contributor` on the resource group lets them start, stop, and manage the VM but not grant
 access to anyone else or touch anything outside the project. That is the right level.
@@ -586,6 +697,36 @@ Pulling it back onto a fresh VM later:
 azcopy copy "https://${AZ_SA}.blob.core.windows.net/datasets/rampnet-benchmark/*" \
   /data/rampnet-benchmark/ --recursive
 ```
+
+### 5.6a Loading blob before the VM exists (server-side copy)
+
+The flow above assumes a VM. Before quota lands there isn't one, and pushing data
+through a laptop is the thing this project explicitly does not want -- it is slow, it
+burns home bandwidth, and the 462 GB dataset will not fit on a laptop disk anyway.
+
+Azure Blob can fetch from a public URL **server-side**, so Azure downloads from Hugging
+Face directly and no bytes touch your machine. One wrinkle, found the hard way:
+
+```
+ERROR: A redirected response (HTTP status code 307) from the copy source is not supported.
+ErrorCode:CannotVerifyCopySource
+```
+
+Every HF `resolve/main/...` URL is a 307 to their CDN, and Azure refuses to follow it.
+The fix is to resolve the redirect yourself and hand Azure the final CDN URL.
+`scripts/hf_to_blob.py` in the project repo does this for a whole repo:
+
+```bash
+source ~/sidewalk-env.sh
+python scripts/hf_to_blob.py --repo projectsidewalk/rampnet-benchmark \
+    --repo-type dataset --dest rampnet-benchmark
+```
+
+It skips blobs that already exist, so re-running it resumes rather than restarting.
+Measured 2026-09-10: `rampnet-model` (0.36 GB, 6 files) landed in about 45 seconds.
+
+Once the VM exists, prefer the `azcopy` flow above for anything already on local disk --
+this script is specifically for *remote source to blob* with no middleman.
 
 A note on **BlobFuse2**, which mounts blob as a filesystem: it is tempting but do not train
 directly off it. Random-access reads of hundreds of thousands of JPEGs over a network mount will

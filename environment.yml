@@ -1,0 +1,60 @@
+# Conda environment for 10-718 sidewalk work.
+#
+#   conda env create -f environment.yml
+#   conda activate sidewalk
+#
+# This is a superset of RampNet's own environment.yml (upstream name:
+# sidewalkcv2). The upstream ML pins are reproduced as-is so their checkpoints
+# and metrics code behave identically; everything under "project additions" is
+# ours -- Azure plumbing, experiment tracking, notebook hygiene.
+#
+# NOTE ON PYTHON: upstream pins python=3.10. We use 3.11, which satisfies
+# rampnet's requires-python (>=3.10). If the solver fights you on any pin below,
+# drop to python=3.10 to match upstream exactly -- that is the tested config.
+#
+# NOTE ON CUDA: `cuda-version=12.6` selects the CUDA builds of pytorch and
+# torchvision on Linux. On macOS or a CPU-only box, comment that line out --
+# the env will still solve and evaluation still runs, just without a GPU.
+name: sidewalk
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+
+  # ---- upstream RampNet pins (keep in sync with ProjectSidewalk/RampNet) ----
+  - pytorch=2.6
+  - torchvision=0.21
+  - cuda-version=12.6
+  - timm
+  - transformers
+  - datasets
+  - numpy
+  - pillow
+  - matplotlib
+  - tqdm
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - pandas
+  - geopy
+  - pyproj
+  - shapely
+  - opencv
+  - requests
+  - pydantic
+  - tensorboard
+  - pytest
+
+  # ---- project additions ----
+  - jupyterlab
+  - ipykernel
+  - nbstripout          # strip notebook outputs, see README
+  - jq                  # scripts/ read run_manifest.json with it
+  - pip
+  - pip:
+      - gradio                  # upstream installs this via pip too
+      - huggingface_hub         # dataset + checkpoint pulls
+      - hf_transfer             # faster HF downloads; set HF_HUB_ENABLE_HF_TRANSFER=1
+      - azure-storage-blob      # blob data plane
+      - azure-identity          # managed-identity / az-login auth on the VM
+      - wandb                   # live training metrics
