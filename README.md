@@ -115,6 +115,9 @@ multi-Gb/s for free.
 
 **`sidewalk-cpu`** — `Standard_E64ads_v7`, 64 vCPU, 512 GB RAM, **$4.65/hr**.
 
+📖 **[docs/cpu-vm.md](docs/cpu-vm.md) — how to get access, start/stop it, and what
+work belongs on it. Read this before using the box.**
+
 ```bash
 source ~/sidewalk-env.sh
 az vm start      -g "$AZ_RG" -n sidewalk-cpu --subscription "$AZ_SUB"
@@ -129,8 +132,9 @@ az vm deallocate -g "$AZ_RG" -n sidewalk-cpu --subscription "$AZ_SUB"   # STOPS 
 | `/data` | 2 TB StandardSSD | Yes | Derived data costly to regenerate |
 | blob | — | Yes | The only real source of truth |
 
-It uses **64 of the 65 regional vCPUs**, so nothing else can run in East US 2 while
-it is allocated. Deallocating releases the quota.
+It uses **64 of the 65 regional vCPUs**. Note that deallocating stops the compute
+bill but does **not** give the quota back — measured, it still reads 64/65 consumed
+while deallocated, so a second large VM in East US 2 needs this one deleted first.
 
 At $4.65/hr a forgotten box is about **$3,300/month**. Auto-shutdown is set for 0400
 UTC as a backstop, but `deallocate` is your job. Blob access needs no secrets —
