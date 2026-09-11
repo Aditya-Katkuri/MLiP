@@ -21,7 +21,8 @@ reports/     figures and tables for the writeup
 |---|---|---|
 | `scripts/az_preflight.sh` | laptop | Asserts the isolated Azure CLI profile is active, then prints GPU SKU availability and current quota |
 | `scripts/hf_to_blob.py` | laptop | Copies a Hugging Face repo into blob **server-side** — Azure fetches from HF directly, no bytes through your machine. Use before the VM exists |
-| `scripts/setup_vm.sh` | VM | Formats/mounts the data disk, shared group, teammate accounts, base tooling |
+| `scripts/setup_vm.sh` | GPU VM | Formats/mounts the data disk, shared group, teammate accounts, base tooling |
+| `scripts/setup_cpu_vm.sh` | CPU VM | Builds the RAID0 NVMe scratch array, mounts the persistent data disk, installs tooling. **Re-run after every VM start** — scratch is wiped on deallocate |
 | `scripts/download_data.sh` | VM | Hugging Face → VM → Blob, so the download is never paid for twice |
 | `scripts/sync_run.sh` | VM | Pushes a run's checkpoints and results to Blob |
 | `scripts/make_manifest.py` | VM | Stamps a run with its git SHA |
@@ -104,6 +105,36 @@ When the job finishes (or every N epochs from inside the training loop):
 ```bash
 ./scripts/sync_run.sh $RUN_ID
 ```
+
+## The CPU data-processing box
+
+GPU quota was refused on this subscription (see the runbook, 1.3a/1.3b), so heavy
+training runs elsewhere. What Azure *is* good for is the data layer: the datasets
+already live in blob in East US 2, and a VM in the same region reads them at
+multi-Gb/s for free.
+
+**`sidewalk-cpu`** — `Standard_E64ads_v7`, 64 vCPU, 512 GB RAM, **$4.65/hr**.
+
+```bash
+source ~/sidewalk-env.sh
+az vm start      -g "$AZ_RG" -n sidewalk-cpu --subscription "$AZ_SUB"
+ssh -i ~/.ssh/sidewalk azureuser@<ip>
+sudo /tmp/setup_cpu_vm.sh          # rebuilds scratch, safe to re-run
+az vm deallocate -g "$AZ_RG" -n sidewalk-cpu --subscription "$AZ_SUB"   # STOPS BILLING
+```
+
+| Mount | Size | Survives deallocate? | For |
+|---|---|---|---|
+| `/mnt/scratch` | 3.4 TB RAID0 NVMe | **No — wiped** | Hot scratch, HF cache, decoded images |
+| `/data` | 2 TB StandardSSD | Yes | Derived data costly to regenerate |
+| blob | — | Yes | The only real source of truth |
+
+It uses **64 of the 65 regional vCPUs**, so nothing else can run in East US 2 while
+it is allocated. Deallocating releases the quota.
+
+At $4.65/hr a forgotten box is about **$3,300/month**. Auto-shutdown is set for 0400
+UTC as a backstop, but `deallocate` is your job. Blob access needs no secrets —
+`azcopy login --identity` uses the VM's managed identity.
 
 ## Shared-GPU etiquette
 

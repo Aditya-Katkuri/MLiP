@@ -6,9 +6,21 @@ a VM exists (Azure ingress is free, VM->blob in-region is free). Before quota is
 approved there is no VM, and routing hundreds of GB through a laptop is both slow
 and, for the 462 GB dataset, physically impossible on most disks.
 
-Azure Blob's "copy from URL" makes Azure's own servers fetch the source. One
-wrinkle: it refuses HTTP redirects, and every HF `resolve/` URL is a 307 to their
-CDN. So we resolve the redirect ourselves and hand Azure the final CDN URL.
+Azure Blob's "copy from URL" makes Azure's own servers fetch the source. Two
+wrinkles, both learned the hard way:
+
+1. Azure refuses HTTP redirects, and every HF `resolve/` URL is a 307 to their CDN.
+   So we resolve the redirect ourselves and hand Azure the final CDN URL.
+2. Those resolved CDN URLs are **signed and short-lived**. Starting hundreds of
+   copies at once means Azure is still working through its queue when the later
+   signatures expire, and those copies die with
+   `403 Forbidden "Copy failed when reading the source."` So we work in batches:
+   resolve a batch's URLs, start them, wait for that batch to finish, then move on.
+   URLs are never more than one batch old.
+
+A failed copy leaves a **0-byte blob behind**, so presence alone is not proof of a
+good copy -- we re-copy anything whose size is 0 or whose copy status is not
+"success". Otherwise a retry silently skips exactly the shards that failed.
 
 usage:
   python scripts/hf_to_blob.py --repo projectsidewalk/rampnet-benchmark \
@@ -51,6 +63,8 @@ def main():
     p.add_argument("--container", default="datasets")
     p.add_argument("--dest", required=True, help="blob prefix, e.g. rampnet-benchmark")
     p.add_argument("--workers", type=int, default=16)
+    p.add_argument("--batch", type=int, default=40,
+                   help="copies in flight at once; keeps signed source URLs fresh")
     p.add_argument("--limit", type=int, default=0, help="only first N files (for testing)")
     a = p.parse_args()
 
@@ -64,46 +78,57 @@ def main():
         files = files[:a.limit]
     print(f"{a.repo}: {len(files)} files -> {a.container}/{a.dest}/", flush=True)
 
-    started, skipped, failed = [], 0, []
+    # A 0-byte blob, or one whose copy status is not "success", is a failed copy
+    # masquerading as a present one. Re-copy those.
+    good = set()
+    for b in cc.list_blobs(name_starts_with=f"{a.dest}/", include=["copy"]):
+        st = b.copy.status
+        if b.size and st in ("success", None):
+            good.add(b.name[len(a.dest) + 1:])
+    todo = [f for f in files if f not in good]
+    print(f"already good: {len(good)}   to copy: {len(todo)}", flush=True)
+
+    failed, copied = [], 0
 
     def kick(rel):
-        blob = cc.get_blob_client(f"{a.dest}/{rel}")
+        """Resolve the signed URL and start the copy, as close together as possible."""
         try:
-            if blob.exists():
-                return ("skip", rel)
-            blob.start_copy_from_url(resolve(source_url(a.repo, a.repo_type, rel)))
+            cc.get_blob_client(f"{a.dest}/{rel}").start_copy_from_url(
+                resolve(source_url(a.repo, a.repo_type, rel)))
             return ("started", rel)
         except Exception as e:
             return ("fail", f"{rel}: {type(e).__name__}: {str(e)[:160]}")
 
-    with cf.ThreadPoolExecutor(max_workers=a.workers) as ex:
-        for kind, val in ex.map(kick, files):
-            if kind == "started":
-                started.append(val)
-            elif kind == "skip":
-                skipped += 1
-            else:
-                failed.append(val)
+    for bi in range(0, len(todo), a.batch):
+        batch = todo[bi:bi + a.batch]
+        started = []
+        with cf.ThreadPoolExecutor(max_workers=a.workers) as ex:
+            for kind, val in ex.map(kick, batch):
+                (started if kind == "started" else failed).append(val)
 
-    print(f"started {len(started)}, already present {skipped}, failed {len(failed)}", flush=True)
-    for f in failed[:10]:
+        # Wait for THIS batch before resolving the next one, so no signed URL
+        # sits unused long enough to expire.
+        pending = list(started)
+        while pending:
+            time.sleep(10)
+            still = []
+            for rel in pending:
+                props = cc.get_blob_client(f"{a.dest}/{rel}").get_blob_properties()
+                st = props.copy.status
+                if st == "pending":
+                    still.append(rel)
+                elif st == "success":
+                    copied += 1
+                else:
+                    failed.append(f"{rel}: copy {st}: {props.copy.status_description}")
+            pending = still
+        done = min(bi + a.batch, len(todo))
+        print(f"  [{time.strftime('%H:%M:%S')}] batch {bi//a.batch + 1}: "
+              f"{done}/{len(todo)} attempted, {copied} copied, {len(failed)} failed",
+              flush=True)
+
+    for f in failed[:15]:
         print("  FAIL", f, flush=True)
-
-    # Azure copies asynchronously; wait for them to settle.
-    pending = list(started)
-    while pending:
-        time.sleep(15)
-        still = []
-        for rel in pending:
-            props = cc.get_blob_client(f"{a.dest}/{rel}").get_blob_properties()
-            st = props.copy.status
-            if st == "pending":
-                still.append(rel)
-            elif st not in ("success", None):
-                failed.append(f"{rel}: copy {st} {props.copy.status_description}")
-        done = len(started) - len(still)
-        print(f"  [{time.strftime('%H:%M:%S')}] {done}/{len(started)} copies complete", flush=True)
-        pending = still
 
     total = sum(b.size for b in cc.list_blobs(name_starts_with=f"{a.dest}/"))
     print(f"done. {a.container}/{a.dest}/ now holds {total/1e9:.2f} GB", flush=True)
