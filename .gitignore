@@ -28,3 +28,10 @@ id_rsa*
 
 # scratch, not for the public repo (contains subscription id)
 temp/
+
+# screenshots and images -- never auto-commit these to a public repo
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
