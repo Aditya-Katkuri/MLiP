@@ -213,29 +213,112 @@ guarantees:
 every single time anyone clicks Stop, including while you're asleep and
 auto-shutdown fires.
 
-Blob needs no passwords or keys — the VM has its own identity:
+## Working with blob storage
+
+Everything durable lives in one storage account, **`sidewalkdata23770`**, split into
+three containers:
+
+| Container | What's in it | You mostly |
+|---|---|---|
+| `datasets` | our source data — treat as read-only | read |
+| `checkpoints` | model checkpoints, one folder per run | write |
+| `results` | metrics, predictions, figures, logs | write |
+
+### Signing in (once per session, on the VM)
 
 ```bash
-azcopy login --identity          # once per login session
-
-# pull the dataset down to scratch to work on it
-azcopy copy "https://sidewalkdata23770.blob.core.windows.net/datasets/rampnet-dataset/*" \
-  /mnt/scratch/rampnet-dataset/ --recursive
-
-# push results back up
-azcopy copy "/data/my-output/*" \
-  "https://sidewalkdata23770.blob.core.windows.net/results/<run_id>/" --recursive
+azcopy login --identity
 ```
 
-What's already in blob, verified file-by-file against Hugging Face:
+No password, no key, no SAS token. The VM has its own identity and blob recognises
+it. If `azcopy` returns **403**, you forgot this step.
 
-| Container / path | Contents |
-|---|---|
-| `datasets/rampnet-dataset/` | 385 shards, 462.47 GB — the full training set |
-| `datasets/rampnet-benchmark/` | 38 files, 11.41 GB — evaluation benchmark |
-| `datasets/models/rampnet/` | 6 files, 0.36 GB — pretrained checkpoint |
-| `checkpoints/<run_id>/` | your training checkpoints |
-| `results/<run_id>/` | metrics, predictions, figures, logs |
+### Seeing what's there
+
+```bash
+azcopy list "https://sidewalkdata23770.blob.core.windows.net/datasets"
+```
+
+Contents, all verified file-by-file against the Hugging Face originals:
+
+| Path | Shards | Size | Per file |
+|---|---|---|---|
+| `datasets/rampnet-dataset/train/` | 128 | 324.0 GB | ~2.5 GB |
+| `datasets/rampnet-dataset/val/` | 128 | 92.5 GB | ~723 MB |
+| `datasets/rampnet-dataset/test/` | 128 | 45.9 GB | ~359 MB |
+| `datasets/rampnet-benchmark/` | 38 | 11.4 GB | — |
+| `datasets/models/rampnet/` | 6 | 0.36 GB | pretrained checkpoint |
+
+All shards are Parquet, named `data-000NN-of-00128.parquet`.
+
+### Pulling data down — start with one shard
+
+**This is the important bit.** The shards are uniform samples of the same data, so
+**one shard is enough to develop against.** Copy a single 2.5 GB file, get your code
+working, and only then scale up:
+
+```bash
+azcopy copy \
+  "https://sidewalkdata23770.blob.core.windows.net/datasets/rampnet-dataset/train/data-00000-of-00128.parquet" \
+  /mnt/scratch/
+```
+
+That takes seconds. Pulling `rampnet-dataset/*` instead pulls **all 462 GB** — close
+to an hour, and it fills most of scratch. Do that only when you genuinely need a
+full pass over the corpus.
+
+A whole split, when you do need one:
+
+```bash
+azcopy copy \
+  "https://sidewalkdata23770.blob.core.windows.net/datasets/rampnet-dataset/test/*" \
+  /mnt/scratch/test/ --recursive        # 45.9 GB, the smallest split
+```
+
+### Pushing results back up
+
+```bash
+RUN_ID=20260915-explore-alice
+azcopy copy "/data/runs/$RUN_ID/results/*" \
+  "https://sidewalkdata23770.blob.core.windows.net/results/$RUN_ID/" --recursive
+```
+
+Or use `scripts/sync_run.sh <run_id>` from the repo, which does checkpoints and
+results together.
+
+### From Python
+
+`azure-storage-blob` is in our conda env. On the VM the managed identity is picked
+up automatically; on your laptop it uses your `az login`. Same code either way:
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+
+svc = BlobServiceClient(
+    "https://sidewalkdata23770.blob.core.windows.net",
+    credential=DefaultAzureCredential(),
+)
+cc = svc.get_container_client("datasets")
+
+# list what's available
+for b in cc.list_blobs(name_starts_with="rampnet-dataset/val/"):
+    print(b.name, b.size)
+
+# fetch one shard, then read it normally
+with open("/mnt/scratch/val-00000.parquet", "wb") as f:
+    f.write(cc.download_blob("rampnet-dataset/val/data-00000-of-00128.parquet").readall())
+
+import pandas as pd
+df = pd.read_parquet("/mnt/scratch/val-00000.parquet")
+```
+
+### From your own laptop
+
+You each hold **Storage Blob Data Contributor** on the storage account personally,
+not just through the VM. So the same `azcopy` and Python code works locally after
+`az login` — handy for pulling one small shard to poke at without starting the VM
+at all. Just don't pull hundreds of GB over your home connection.
 
 ## What belongs on this box
 

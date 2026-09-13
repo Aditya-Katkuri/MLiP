@@ -50,10 +50,30 @@ stopping it kills their jobs.
 - /mnt/scratch (3.4 TB, fastest) — working files. WIPED every time the VM stops.
 - /data (2 TB) — survives stops, but dies with the VM.
 - Blob storage — the only thing that's actually safe. Anything you'd be upset to
-  lose goes here. From the VM: `azcopy login --identity` then `azcopy copy ...`
+  lose goes here.
 
-Our datasets are already in blob: the full 462 GB training set, the 11 GB
-benchmark, and the pretrained checkpoint.
+**Getting the data.** On the VM, sign in once per session:
+
+    azcopy login --identity
+
+No password or key needed — the VM has its own identity. Then grab ONE shard to
+work with (they're all samples of the same data, so one is enough to develop
+against):
+
+    azcopy copy "https://sidewalkdata23770.blob.core.windows.net/datasets/rampnet-dataset/train/data-00000-of-00128.parquet" /mnt/scratch/
+
+That's 2.5 GB and takes seconds. Do NOT copy the whole `rampnet-dataset/*` folder
+unless you really mean it — that's 462 GB, takes about an hour, and nearly fills
+the scratch disk.
+
+What's in blob: the training set (128 shards, 324 GB), val (128, 92 GB), test
+(128, 46 GB), the 11 GB benchmark, and the pretrained checkpoint. All Parquet.
+
+Pushing results back up:
+
+    azcopy copy "/data/runs/<run_id>/results/*" "https://sidewalkdata23770.blob.core.windows.net/results/<run_id>/" --recursive
+
+There's more detail in cpu-vm.md, including how to do this from Python.
 
 **Two things that look like bugs but aren't**
 
