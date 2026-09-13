@@ -53,11 +53,20 @@ else
   echo ">>> /mnt/scratch already mounted"
 fi
 
-# ---------- shared group so all four of us can write ----------
+# ---------- shared access so all four of us can write ----------
+# Two mechanisms, because there are two kinds of account on this box:
+#   * local users (azureuser)      -> the `sidewalk` group
+#   * Microsoft Entra SSH logins   -> the `aad_admins` group
+# Entra accounts are created on first login, so they can never be added to
+# `sidewalk` ahead of time. A default ACL for aad_admins covers them
+# automatically, including people who have not logged in yet.
+command -v setfacl >/dev/null || apt-get install -y -qq acl
 groupadd -f sidewalk
 for d in /data /mnt/scratch; do
   [[ -d $d ]] || continue
   chgrp -R sidewalk "$d"; chmod -R 2775 "$d"     # setgid: new files inherit the group
+  setfacl -R    -m g:aad_admins:rwx "$d"          # existing files
+  setfacl -R -d -m g:aad_admins:rwx "$d"          # and anything created later
 done
 usermod -aG sidewalk azureuser
 

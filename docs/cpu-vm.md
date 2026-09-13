@@ -25,46 +25,82 @@ datasets already sit in blob storage in East US 2, and a VM in that same region
 reads them at multi-Gb/s for free. Doing that work from a laptop means dragging
 hundreds of GB across the internet onto a disk that probably can't hold it.
 
-## First-time setup (each person does this once)
+## Connecting: sign in with your Microsoft account
 
-Right now **only Aditya can SSH in.** Two things are needed per person, and both
-require Aditya to run a command — you can't self-serve these.
+**There are no SSH keys to exchange.** This VM uses Microsoft Entra login, the same
+model as Azure ML compute instances: you authenticate with the Microsoft account
+you were invited with, and Azure issues a short-lived certificate behind the
+scenes. Your Linux account is created automatically the first time you log in.
 
-**1. Send Aditya your SSH public key.** On your own machine:
+### One-time, on your own machine
 
 ```bash
-ssh-keygen -t ed25519 -C "$(whoami)@10718" -f ~/.ssh/sidewalk
-cat ~/.ssh/sidewalk.pub        # send this line to Aditya
+# 1. accept the Azure invitation emailed to your andrew.cmu.edu address, if you
+#    haven't already -- nothing below works until you do
+# 2. install the Azure CLI, then:
+az extension add --name ssh
+az login                       # sign in as your andrew.cmu.edu account
 ```
 
-Send the `.pub` file only. Never send the other file (`~/.ssh/sidewalk`) to
-anyone — that's your private key.
+### Every time you connect
 
-**2. Send Aditya your public IP.** Run `curl -4 ifconfig.me`. SSH is firewalled to
-specific addresses, so an unknown IP is refused before it ever reaches a password
-or key check. If your connection just hangs, this is almost always why. Your home
-IP can change, and CMU wifi will give you a different one than your apartment, so
-expect to redo this occasionally.
+```bash
+az ssh vm -n sidewalk-cpu -g sidewalk-rg
+```
+
+That's it. No `-i keyfile`, no username, no IP address to remember.
+
+> If you also use Azure for other projects, add
+> `--subscription 62173b9a-6762-4b80-9610-9bd71c826d7a` so you don't land in the
+> wrong one.
+
+### VS Code
+
+Export an SSH config once, then use the **Remote - SSH** extension normally:
+
+```bash
+az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
+```
+
+`sidewalk-cpu` then appears in the Remote-SSH host list. The certificate is
+short-lived, so re-run that command if VS Code starts refusing to connect.
+
+### What you get
+
+You have the **Virtual Machine Administrator Login** role, so you get `sudo`
+without a password. That's needed to rebuild the scratch disk (below). It also
+means you can break the box for everyone, so run `sudo` deliberately.
+
+### The one thing Aditya still has to do: the firewall
+
+SSH is restricted by source IP. CMU's campus ranges (`128.2.0.0/16`,
+`128.237.0.0/16`) are allowed, so **on campus it just works**. From home or a
+café, your connection will hang with no error — that is the firewall, not a
+broken machine. Send Aditya the output of `curl -4 ifconfig.me` and he'll add it.
 
 <details>
-<summary>For Aditya: adding someone (click to expand)</summary>
+<summary>For Aditya: allowing another IP (click to expand)</summary>
+
+Portal → `sidewalk-cpu` → **Networking** → **Network settings** → click
+`default-allow-ssh` → **Source: IP Addresses** → append to the CIDR list:
+
+```
+128.2.0.0/16,128.237.0.0/16,73.79.201.96/32,<NEW_IP>/32
+```
+
+Or from the CLI (space-separated, list everyone every time — it replaces, not appends):
 
 ```bash
 source ~/sidewalk-env.sh
-
-# 1. add their IP to the SSH allow-list (space-separated, include everyone each time)
 az network nsg rule update -g "$AZ_RG" --nsg-name sidewalk-cpuNSG -n default-allow-ssh \
   --subscription "$AZ_SUB" \
-  --source-address-prefixes 73.79.201.96/32 <THEIR_IP>/32
-
-# 2. with the VM running, install their key
-scp -i ~/.ssh/sidewalk alice.pub azureuser@20.69.232.144:/tmp/
-ssh -i ~/.ssh/sidewalk azureuser@20.69.232.144 \
-  'sudo adduser --disabled-password --gecos "" alice && sudo usermod -aG sidewalk alice && \
-   sudo mkdir -p /home/alice/.ssh && sudo cp /tmp/alice.pub /home/alice/.ssh/authorized_keys && \
-   sudo chown -R alice:alice /home/alice/.ssh && sudo chmod 700 /home/alice/.ssh && \
-   sudo chmod 600 /home/alice/.ssh/authorized_keys'
+  --source-address-prefixes 128.2.0.0/16 128.237.0.0/16 73.79.201.96/32 <NEW_IP>/32
 ```
+
+Granting a *new* person access (not just a new IP) needs two role assignments at
+resource-group scope: `Virtual Machine Administrator Login` (to SSH — note that
+Contributor does **not** grant this; Azure separates managing a VM from logging
+into it) and `Storage Blob Data Contributor` on the storage account (for blob).
 </details>
 
 ## Starting and stopping it
@@ -100,7 +136,7 @@ Stop it when you're done for the day.
 ## Every time you start it: rebuild the scratch disk
 
 ```bash
-ssh -i ~/.ssh/sidewalk <you>@20.69.232.144
+az ssh vm -n sidewalk-cpu -g sidewalk-rg
 sudo /tmp/setup_cpu_vm.sh
 ```
 
@@ -109,7 +145,12 @@ from *ephemeral* local NVMe that Azure destroys whenever the VM is deallocated. 
 script rebuilds it. It's safe to re-run and it will not touch `/data`.
 
 If `/tmp/setup_cpu_vm.sh` is missing (`/tmp` is cleared on reboot), copy it up again
-from this repo: `scp -i ~/.ssh/sidewalk scripts/setup_cpu_vm.sh azureuser@20.69.232.144:/tmp/`
+from this repo. `az ssh config` makes `scp` work too:
+
+```bash
+az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
+scp scripts/setup_cpu_vm.sh sidewalk-cpu:/tmp/
+```
 
 ## Where to put things
 
@@ -194,9 +235,10 @@ jobs slower than running them one after another.
 connected or has a job running. Stopping it kills their work *and* erases
 `/mnt/scratch`.
 
-**Shared files:** everything under `/data` and `/mnt/scratch` belongs to the
-`sidewalk` group with setgid set, so files you create there are writable by the rest
-of us automatically. Work in those directories, not in your home folder, if you want
+**Shared files:** everything under `/data` and `/mnt/scratch` is group-writable with
+setgid plus a default ACL for `aad_admins`, the group every Entra login lands in. So
+files you create there are writable by the rest of us automatically, even for
+teammates who have never logged in yet. Work in those directories, not in your home folder, if you want
 anyone else to be able to use the output.
 
 ## Python environment
@@ -213,8 +255,11 @@ code behaves the same here as on whatever GPU machine we end up training on.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| SSH hangs with no prompt | Your IP isn't on the allow-list, or the VM is stopped | Check the VM is running; send Aditya `curl -4 ifconfig.me` |
-| `Permission denied (publickey)` | Your key isn't installed, or you used the wrong `-i` path | Confirm with Aditya that your key was added |
+| SSH hangs with no prompt | Your IP isn't on the allow-list, or the VM is stopped | Check the VM is running; on campus you're covered, otherwise send Aditya `curl -4 ifconfig.me` |
+| `Connection closed by ... port 22` | You lack the **Virtual Machine Administrator Login** role. Contributor is not enough | Ask Aditya to assign it |
+| `Couldn't retrieve token from local cache` | Your CLI session expired | `az login` again |
+| `az: 'ssh' is not in the 'az' command group` | Missing CLI extension | `az extension add --name ssh` |
+| Azure says you have no access at all | You never accepted the emailed invitation | Accept it, then `az login` |
 | `/mnt/scratch` is empty or missing | The VM was stopped — this is expected, not a bug | `sudo /tmp/setup_cpu_vm.sh` |
 | `azcopy` gives 403 | You didn't run `azcopy login --identity` this session | Run it |
 | `conda: command not found` | Login shell didn't source the profile | `export PATH=/opt/miniconda/bin:$PATH` |
