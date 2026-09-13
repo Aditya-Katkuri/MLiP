@@ -12,7 +12,7 @@ loses it.
 | Region | East US 2 (same region as our blob storage — this is the point) |
 | IP | **20.69.232.144** (static — it does not change when the VM is stopped) |
 | Cost | **$4.65/hour**, billed only while it is *running* |
-| Login | `azureuser` |
+| Login | your `@andrew.cmu.edu` Microsoft account — no SSH key, no VPN |
 
 ## Why this machine exists
 
@@ -32,62 +32,27 @@ model as Azure ML compute instances: you authenticate with the Microsoft account
 you were invited with, and Azure issues a short-lived certificate behind the
 scenes. Your Linux account is created automatically the first time you log in.
 
+**Connect from anywhere** — home, campus, a café, a hotspot. There's no VPN, no IP
+allow-list, and no key to copy around. Your Microsoft account *is* your login.
+
 ### One-time, on your own machine
 
-```bash
-# 1. accept the Azure invitation emailed to your andrew.cmu.edu address, if you
-#    haven't already -- nothing below works until you do
-# 2. install the Azure CLI, then:
-az extension add --name ssh
-az login                       # sign in as your andrew.cmu.edu account
-```
+1. **Accept the Azure invitation** emailed to your `andrew.cmu.edu` address. Nothing
+   below works until you do.
+2. **Install the Azure CLI** — [install guide](https://learn.microsoft.com/cli/azure/install-azure-cli)
+   (macOS: `brew install azure-cli`).
+3. Run:
+
+   ```bash
+   az extension add --name ssh
+   az login                       # sign in as your andrew.cmu.edu account
+   ```
 
 ### What you get
 
 You have the **Virtual Machine Administrator Login** role, so you get `sudo`
 without a password. That's needed to rebuild the scratch disk (below). It also
 means you can break the box for everyone, so run `sudo` deliberately.
-
-### Connecting from off campus
-
-SSH is restricted by source IP. CMU's campus ranges (`128.2.0.0/16`,
-`128.237.0.0/16`) are allowed, so **on campus it just works, with no extra setup**.
-
-From home, a café, or a phone hotspot, your connection will **hang with no error
-message**. That is the firewall, not a broken machine and not a bad password. Send
-Aditya the output of:
-
-```bash
-curl -4 ifconfig.me
-```
-
-and he'll add it. Note that home IP addresses change every so often, so if it worked
-last week and hangs today, send him a fresh one.
-
-<details>
-<summary>For Aditya: allowing another IP (click to expand)</summary>
-
-Portal → `sidewalk-cpu` → **Networking** → **Network settings** → click
-`default-allow-ssh` → **Source: IP Addresses** → append to the CIDR list:
-
-```
-128.2.0.0/16,128.237.0.0/16,73.79.201.96/32,<NEW_IP>/32
-```
-
-Or from the CLI (space-separated, list everyone every time — it replaces, not appends):
-
-```bash
-source ~/sidewalk-env.sh
-az network nsg rule update -g "$AZ_RG" --nsg-name sidewalk-cpuNSG -n default-allow-ssh \
-  --subscription "$AZ_SUB" \
-  --source-address-prefixes 128.2.0.0/16 128.237.0.0/16 73.79.201.96/32 <NEW_IP>/32
-```
-
-Granting a *new* person access (not just a new IP) needs two role assignments at
-resource-group scope: `Virtual Machine Administrator Login` (to SSH — note that
-Contributor does **not** grant this; Azure separates managing a VM from logging
-into it) and `Storage Blob Data Contributor` on the storage account (for blob).
-</details>
 
 ---
 
@@ -116,9 +81,9 @@ Two ways. Both use your Microsoft account; neither needs an SSH key.
 <details open>
 <summary><b>A. VS Code (recommended for real work)</b></summary>
 
-One-time setup:
+**One-time setup**
 
-1. Install the **Remote - SSH** extension (by Microsoft) in VS Code.
+1. Install the **Remote - SSH** extension (publisher: Microsoft) in VS Code.
 2. In a terminal, generate the connection profile:
 
    ```bash
@@ -126,19 +91,28 @@ One-time setup:
    az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
    ```
 
-Then, each session:
+   That adds a `sidewalk-cpu` host entry to your SSH config, together with a
+   short-lived certificate proving who you are to Azure.
 
-3. `Cmd + Shift + P` → **Remote-SSH: Connect to Host...**
-4. Pick **`sidewalk-cpu`** from the list. A new window opens, connected to the VM.
-5. **File → Open Folder** → `/data` or `/mnt/scratch` to work there.
+**Each session** (after starting the VM in the portal)
 
-> **Different extension from Azure ML.** For Azure ML compute instances you use
-> the *Azure Machine Learning* extension. This is a plain VM, so it's
-> *Remote - SSH* instead. The experience is the same — the machine shows up as a
-> remote host and your editor, terminal, and notebooks all run on it.
+3. `Cmd + Shift + P` → type **Remote-SSH: Connect to Host...**
+4. Pick **`sidewalk-cpu`**. A new VS Code window opens, running on the VM.
+5. **File → Open Folder** → `/data` or `/mnt/scratch`.
+6. **Terminal → New Terminal** gives you a shell *on the VM*, not your laptop.
+   Run the scratch rebuild (step 3 below) there.
 
-> **If VS Code suddenly refuses to connect**, your certificate expired. Re-run the
-> `az ssh config` command above. It's short-lived by design.
+Your editor, terminal, notebooks, and extensions now all run on the 64-core
+machine. The files you browse are the VM's files, not your laptop's.
+
+> **This is a different extension from Azure ML.** For AML compute instances you
+> use the *Azure Machine Learning* extension, which tunnels over a WebSocket.
+> This is a plain VM, so it's *Remote - SSH*. Day to day it feels the same; only
+> the plumbing underneath differs.
+
+> **If VS Code connected fine yesterday and refuses today**, your certificate
+> expired — they're short-lived by design. Re-run the `az ssh config` command
+> above and reconnect. This is the one recurring papercut compared with AML.
 
 </details>
 
@@ -329,8 +303,9 @@ code behaves the same here as on whatever GPU machine we end up training on.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| SSH hangs with no prompt | Your IP isn't on the allow-list, or the VM is stopped | Check the VM is running; on campus you're covered, otherwise send Aditya `curl -4 ifconfig.me` |
-| `Connection closed by ... port 22` | You lack the **Virtual Machine Administrator Login** role. Contributor is not enough | Ask Aditya to assign it |
+| Connection hangs with no prompt | The VM is stopped | Start it in the portal, wait for **Running** |
+| `Connection closed by ... port 22` | You lack the **Virtual Machine Administrator Login** role. Contributor is *not* enough — Azure separates managing a VM from logging into it | Ask Aditya to assign it |
+| VS Code worked yesterday, refuses today | Your certificate expired | Re-run `az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg` |
 | `Couldn't retrieve token from local cache` | Your CLI session expired | `az login` again |
 | `az: 'ssh' is not in the 'az' command group` | Missing CLI extension | `az extension add --name ssh` |
 | Azure says you have no access at all | You never accepted the emailed invitation | Accept it, then `az login` |
