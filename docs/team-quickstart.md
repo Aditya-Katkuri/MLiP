@@ -31,14 +31,12 @@ account, from anywhere.
 1. Go to portal.azure.com, search `sidewalk-cpu`, open it, click **Start**.
    Wait ~60s for Status to say **Running**. Any of us can start it.
 2. In VS Code: Cmd+Shift+P → "Remote-SSH: Connect to Host" → pick `sidewalk-cpu`.
-3. Open a terminal in that VS Code window and run:
+3. Do your work. File → Open Folder → /data or /mnt/scratch
+4. **When you're done, go back to the portal and click Stop.**
 
-   sudo /tmp/setup_cpu_vm.sh
-
-   ^ Do this EVERY session. The fast scratch disk gets wiped each time the VM
-   stops, and this rebuilds it. If /mnt/scratch is missing, this is why.
-4. Do your work. File → Open Folder → /data or /mnt/scratch
-5. **When you're done, go back to the portal and click Stop.**
+Nothing to set up on connect — the scratch disk is rebuilt automatically while the
+VM boots. Installed software (conda envs, apt packages) persists across stops, so
+you only ever install things once.
 
 **Please actually stop it.** It costs $4.65/hour while running — about $110/day if
 someone forgets. There's an auto-shutdown at midnight ET as a backstop but don't

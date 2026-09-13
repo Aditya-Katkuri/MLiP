@@ -129,15 +129,16 @@ No `-i keyfile`, no username, no IP to remember.
 
 </details>
 
-### 3. Rebuild the scratch disk
+### 3. Nothing — it's already set up
 
-**Every single session, right after connecting:**
+`/mnt/scratch` is rebuilt automatically while the VM boots, by a systemd unit
+(`sidewalk-scratch.service`). By the time you can log in, it's mounted.
+
+Only if `/mnt/scratch` is somehow missing:
 
 ```bash
-sudo /tmp/setup_cpu_vm.sh
+sudo sidewalk-setup --scratch-only
 ```
-
-Skip this and `/mnt/scratch` won't exist. See the next section for why.
 
 ### 4. Work
 
@@ -179,23 +180,33 @@ Stop it when you're done for the day.
 > disks keep costing a few dollars a month either way; that part is unavoidable and
 > is what preserves your `/data`.
 
-## Why the scratch rebuild is needed every time
+## What survives a stop, and what doesn't
 
-`sudo /tmp/setup_cpu_vm.sh` is **not optional and not a one-time thing.** The fast
-scratch array is built from *ephemeral* local NVMe that Azure destroys whenever the
-VM is deallocated. The script rebuilds it. It's safe to re-run and it will not touch
-`/data`.
+**Installed software persists.** The OS disk is a managed disk, so deallocating
+releases the *hardware*, not the disk. Conda environments, `apt` packages, `azcopy`,
+Claude Code, your home directory — all still there next time. Build an environment
+once and it stays built.
 
-If `/mnt/scratch` looks empty or missing, this is why — it is expected behaviour,
-not a broken machine.
+**`/mnt/scratch` does not.** It's striped across *ephemeral* local NVMe that Azure
+destroys on every deallocate. A systemd unit rebuilds the empty array at boot, so
+the mount is always there — but **its contents are gone every time**. That is by
+design, not a fault.
 
-If `/tmp/setup_cpu_vm.sh` is missing (`/tmp` is cleared on reboot), copy it up again
-from this repo. `az ssh config` makes `scp` work too:
+| | Survives a stop? |
+|---|---|
+| `/` — apt packages, `/opt/miniconda` and all envs, `/home` | ✅ |
+| `/data` — 2 TB managed disk | ✅ |
+| `/mnt/scratch` — contents | ❌ erased every stop |
+| `/tmp` | ❌ cleared on reboot |
 
-```bash
-az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
-scp scripts/setup_cpu_vm.sh sidewalk-cpu:/tmp/
-```
+⚠️ `/data` survives a *stop* but dies with the *VM*. If the machine is ever deleted
+or rebuilt, `/` and `/data` go with it, conda envs included. That's why
+`environment.yml` is in git — it's the definition; the installed env is just a
+cache of it. Same reasoning as data living in blob.
+
+The setup script itself lives at `/usr/local/bin/sidewalk-setup`, on the OS disk, so
+it survives too. (It used to be kept in `/tmp` — which is cleared on reboot, meaning
+the one script you needed after a restart was the one thing guaranteed to be gone.)
 
 ## Where to put things
 
@@ -389,6 +400,9 @@ code behaves the same here as on whatever GPU machine we end up training on.
 | `Couldn't retrieve token from local cache` | Your CLI session expired | `az login` again |
 | `az: 'ssh' is not in the 'az' command group` | Missing CLI extension | `az extension add --name ssh` |
 | Azure says you have no access at all | You never accepted the emailed invitation | Accept it, then `az login` |
-| `/mnt/scratch` is empty or missing | The VM was stopped — this is expected, not a bug | `sudo /tmp/setup_cpu_vm.sh` |
+| `/mnt/scratch` is empty | The VM was stopped — its contents are erased every time, by design | Nothing to fix. Re-fetch from blob |
+| `/mnt/scratch` is missing entirely | The boot unit didn't run | `sudo sidewalk-setup --scratch-only`, then tell Aditya |
+| `conda create` fails with a Terms of Service error | Anaconda's default channels need a ToS acceptance we deliberately haven't given | Add `-c conda-forge --override-channels` |
+| Your new conda env isn't visible to teammates | Conda silently put it in your home dir | Create with an explicit prefix: `-p /opt/miniconda/envs/<name>` |
 | `azcopy` gives 403 | You didn't run `azcopy login --identity` this session | Run it |
 | `conda: command not found` | Login shell didn't source the profile | `export PATH=/opt/miniconda/bin:$PATH` |
