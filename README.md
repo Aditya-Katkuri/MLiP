@@ -115,8 +115,11 @@ multi-Gb/s for free.
 
 **`sidewalk-cpu`** — `Standard_E64ads_v7`, 64 vCPU, 512 GB RAM, **$4.65/hr**.
 
-📖 **[docs/cpu-vm.md](docs/cpu-vm.md) — how to get access, start/stop it, and what
-work belongs on it. Read this before using the box.**
+📖 **New here? Start with [docs/team-quickstart.md](docs/team-quickstart.md)** — the
+10-minute setup and the start/connect/stop loop.
+
+📖 **[docs/cpu-vm.md](docs/cpu-vm.md)** — the full reference: storage layout, what
+work belongs on the box, shared-use etiquette, and troubleshooting.
 
 ```bash
 source ~/sidewalk-env.sh
