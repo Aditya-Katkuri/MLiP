@@ -42,41 +42,27 @@ az extension add --name ssh
 az login                       # sign in as your andrew.cmu.edu account
 ```
 
-### Every time you connect
-
-```bash
-az ssh vm -n sidewalk-cpu -g sidewalk-rg
-```
-
-That's it. No `-i keyfile`, no username, no IP address to remember.
-
-> If you also use Azure for other projects, add
-> `--subscription 62173b9a-6762-4b80-9610-9bd71c826d7a` so you don't land in the
-> wrong one.
-
-### VS Code
-
-Export an SSH config once, then use the **Remote - SSH** extension normally:
-
-```bash
-az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
-```
-
-`sidewalk-cpu` then appears in the Remote-SSH host list. The certificate is
-short-lived, so re-run that command if VS Code starts refusing to connect.
-
 ### What you get
 
 You have the **Virtual Machine Administrator Login** role, so you get `sudo`
 without a password. That's needed to rebuild the scratch disk (below). It also
 means you can break the box for everyone, so run `sudo` deliberately.
 
-### The one thing Aditya still has to do: the firewall
+### Connecting from off campus
 
 SSH is restricted by source IP. CMU's campus ranges (`128.2.0.0/16`,
-`128.237.0.0/16`) are allowed, so **on campus it just works**. From home or a
-café, your connection will hang with no error — that is the firewall, not a
-broken machine. Send Aditya the output of `curl -4 ifconfig.me` and he'll add it.
+`128.237.0.0/16`) are allowed, so **on campus it just works, with no extra setup**.
+
+From home, a café, or a phone hotspot, your connection will **hang with no error
+message**. That is the firewall, not a broken machine and not a bad password. Send
+Aditya the output of:
+
+```bash
+curl -4 ifconfig.me
+```
+
+and he'll add it. Note that home IP addresses change every so often, so if it worked
+last week and hangs today, send him a fresh one.
 
 <details>
 <summary>For Aditya: allowing another IP (click to expand)</summary>
@@ -103,15 +89,104 @@ Contributor does **not** grant this; Azure separates managing a VM from logging
 into it) and `Storage Blob Data Contributor` on the storage account (for blob).
 </details>
 
-## Starting and stopping it
+---
 
-The VM is **stopped (deallocated) by default** and should be left that way. You all
-have Contributor on the resource group, so anyone can start it.
+## The session loop: start → connect → work → stop
 
-**In the portal:** portal.azure.com → search `sidewalk-cpu` → **Start**. Takes about
-a minute. To stop it, use the **Stop** button, which deallocates properly.
+**The VM is switched off by default.** It costs nothing while stopped, and $4.65/hr
+while running. Every session looks like this:
 
-**From the CLI:**
+### 1. Start it (Azure portal)
+
+1. Go to **portal.azure.com** and sign in with your **andrew.cmu.edu** account.
+2. Type `sidewalk-cpu` in the top search bar and click the virtual machine result.
+3. Check **Status** on the Overview page:
+   - **Stopped (deallocated)** → click **▶ Start** at the top. Wait ~60 seconds
+     until Status reads **Running**.
+   - **Running** → someone else is already on it. Don't stop it when you're done
+     without checking (see *Sharing it* below).
+
+> Anyone on the team can start it — you all have Contributor on the resource
+> group. You do not need Aditya for this.
+
+### 2. Connect
+
+Two ways. Both use your Microsoft account; neither needs an SSH key.
+
+<details open>
+<summary><b>A. VS Code (recommended for real work)</b></summary>
+
+One-time setup:
+
+1. Install the **Remote - SSH** extension (by Microsoft) in VS Code.
+2. In a terminal, generate the connection profile:
+
+   ```bash
+   az login
+   az ssh config --file ~/.ssh/config -n sidewalk-cpu -g sidewalk-rg
+   ```
+
+Then, each session:
+
+3. `Cmd + Shift + P` → **Remote-SSH: Connect to Host...**
+4. Pick **`sidewalk-cpu`** from the list. A new window opens, connected to the VM.
+5. **File → Open Folder** → `/data` or `/mnt/scratch` to work there.
+
+> **Different extension from Azure ML.** For Azure ML compute instances you use
+> the *Azure Machine Learning* extension. This is a plain VM, so it's
+> *Remote - SSH* instead. The experience is the same — the machine shows up as a
+> remote host and your editor, terminal, and notebooks all run on it.
+
+> **If VS Code suddenly refuses to connect**, your certificate expired. Re-run the
+> `az ssh config` command above. It's short-lived by design.
+
+</details>
+
+<details>
+<summary><b>B. Terminal</b></summary>
+
+```bash
+az login                                    # first time, or after it expires
+az ssh vm -n sidewalk-cpu -g sidewalk-rg
+```
+
+No `-i keyfile`, no username, no IP to remember.
+
+> If you use Azure for other projects too, add
+> `--subscription 62173b9a-6762-4b80-9610-9bd71c826d7a` so you don't land in the
+> wrong subscription.
+
+</details>
+
+### 3. Rebuild the scratch disk
+
+**Every single session, right after connecting:**
+
+```bash
+sudo /tmp/setup_cpu_vm.sh
+```
+
+Skip this and `/mnt/scratch` won't exist. See the next section for why.
+
+### 4. Work
+
+See *What belongs on this box* below.
+
+### 5. Stop it (Azure portal)
+
+Back on the `sidewalk-cpu` Overview page, click **⏹ Stop**. Confirm Status reads
+**Stopped (deallocated)**.
+
+**Check first that nobody else is connected** — `who` and `tmux ls` on the VM will
+tell you. Stopping it kills their jobs and erases `/mnt/scratch`.
+
+The portal's **Stop** button deallocates properly, which is what stops billing.
+There's an auto-shutdown at 0400 UTC as a safety net, but don't rely on it — that's
+potentially a full day of billing you didn't need.
+
+## Starting and stopping from the CLI
+
+The portal is the easy path (see the session loop above). From a terminal:
 
 ```bash
 source ~/sidewalk-env.sh
@@ -133,16 +208,15 @@ Stop it when you're done for the day.
 > disks keep costing a few dollars a month either way; that part is unavoidable and
 > is what preserves your `/data`.
 
-## Every time you start it: rebuild the scratch disk
+## Why the scratch rebuild is needed every time
 
-```bash
-az ssh vm -n sidewalk-cpu -g sidewalk-rg
-sudo /tmp/setup_cpu_vm.sh
-```
+`sudo /tmp/setup_cpu_vm.sh` is **not optional and not a one-time thing.** The fast
+scratch array is built from *ephemeral* local NVMe that Azure destroys whenever the
+VM is deallocated. The script rebuilds it. It's safe to re-run and it will not touch
+`/data`.
 
-This is **not optional and not a one-time thing.** The fast scratch array is built
-from *ephemeral* local NVMe that Azure destroys whenever the VM is deallocated. The
-script rebuilds it. It's safe to re-run and it will not touch `/data`.
+If `/mnt/scratch` looks empty or missing, this is why — it is expected behaviour,
+not a broken machine.
 
 If `/tmp/setup_cpu_vm.sh` is missing (`/tmp` is cleared on reboot), copy it up again
 from this repo. `az ssh config` makes `scp` work too:
