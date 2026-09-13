@@ -27,10 +27,9 @@ hundreds of GB across the internet onto a disk that probably can't hold it.
 
 ## Connecting: sign in with your Microsoft account
 
-**There are no SSH keys to exchange.** This VM uses Microsoft Entra login, the same
-model as Azure ML compute instances: you authenticate with the Microsoft account
-you were invited with, and Azure issues a short-lived certificate behind the
-scenes. Your Linux account is created automatically the first time you log in.
+**There are no SSH keys to exchange.** You sign in with the Microsoft account you
+were invited with, and Azure issues a short-lived certificate behind the scenes.
+Your Linux account is created automatically the first time you log in.
 
 **Connect from anywhere** — home, campus, a café, a hotspot. There's no VPN, no IP
 allow-list, and no key to copy around. Your Microsoft account *is* your login.
@@ -105,14 +104,12 @@ Two ways. Both use your Microsoft account; neither needs an SSH key.
 Your editor, terminal, notebooks, and extensions now all run on the 64-core
 machine. The files you browse are the VM's files, not your laptop's.
 
-> **This is a different extension from Azure ML.** For AML compute instances you
-> use the *Azure Machine Learning* extension, which tunnels over a WebSocket.
-> This is a plain VM, so it's *Remote - SSH*. Day to day it feels the same; only
-> the plumbing underneath differs.
+> **Make sure you install *Remote - SSH*** (publisher: Microsoft). Several
+> extensions have similar names; this is the one that works here.
 
 > **If VS Code connected fine yesterday and refuses today**, your certificate
 > expired — they're short-lived by design. Re-run the `az ssh config` command
-> above and reconnect. This is the one recurring papercut compared with AML.
+> above and reconnect.
 
 </details>
 
