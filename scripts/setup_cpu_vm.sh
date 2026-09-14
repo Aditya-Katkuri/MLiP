@@ -106,6 +106,11 @@ if [[ ! -d /opt/miniconda ]]; then
 fi
 
 cat > /etc/profile.d/sidewalk.sh <<'PROF'
+# Per-user native installs (e.g. `claude install`) land in ~/.local/bin. Put it
+# ahead of /usr/bin so a user's own auto-updating copy wins over anything
+# installed system-wide with sudo, which cannot auto-update.
+export PATH="$HOME/.local/bin:$PATH"
+
 # Source conda's shell hook rather than prepending /opt/miniconda/bin to PATH.
 # Two reasons:
 #   1. `conda activate` needs the shell function this defines; with PATH alone
