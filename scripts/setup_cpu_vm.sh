@@ -106,7 +106,18 @@ if [[ ! -d /opt/miniconda ]]; then
 fi
 
 cat > /etc/profile.d/sidewalk.sh <<'PROF'
-export PATH=/opt/miniconda/bin:$PATH
+# Source conda's shell hook rather than prepending /opt/miniconda/bin to PATH.
+# Two reasons:
+#   1. `conda activate` needs the shell function this defines; with PATH alone
+#      it fails with "Run 'conda init' before 'conda activate'".
+#   2. Prepending the whole conda bin dir shadows system tools with conda's own
+#      builds. conda's `clear` links against libtinfow.so.6, which is not on the
+#      default loader path, so `clear` dies with a missing-library error.
+# The hook gives you conda without hijacking PATH.
+if [ -f /opt/miniconda/etc/profile.d/conda.sh ]; then
+    . /opt/miniconda/etc/profile.d/conda.sh
+fi
+
 export HF_HOME=/mnt/scratch/hf_cache      # scratch: re-downloadable, wiped on deallocate
 export HF_HUB_ENABLE_HF_TRANSFER=1
 export AZ_SA=sidewalkdata23770
