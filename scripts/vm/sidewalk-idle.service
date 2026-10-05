@@ -1,0 +1,7 @@
+[Unit]
+Description=Deallocate the VM after 3h idle
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/sidewalk-idle-deallocate
