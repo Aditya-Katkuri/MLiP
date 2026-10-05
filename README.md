@@ -41,6 +41,8 @@ to `3.10` — that is upstream's tested config.
 
 ## Where things live
 
+Dataset layout, class labels, and file provenance: [Sidewalk data](docs/sidewalk-data/README.md).
+
 | Thing | Where |
 |---|---|
 | Code, configs, notebooks | this repo |
