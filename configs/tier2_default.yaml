@@ -1,0 +1,81 @@
+# Tier 2: rank Pittsburgh's known sidewalk barriers for repair, from existing human labels only.
+#
+#   python src/tier2/prioritize.py --config configs/tier2_default.yaml
+#   python src/tier2/evaluate.py   --config configs/tier2_default.yaml
+#
+# Every weight below is a judgment call. evaluate.py measures how much the ranking moves when they
+# change, so disagreements can be settled with numbers. Change weights in a copy of this file, never
+# in code, and give the copy its own run_id.
+
+run_id: 20260915-tier2-default-claude
+data: /data/datasets/pittsburgh
+out: /data/runs/20260915-tier2-default-claude/results
+
+candidates:
+  # Label clusters (one per physical feature), inside the city boundary. CurbRamp and Crosswalk are
+  # *features*; they enter only when Project Sidewalk's own score for them is negative (a bad ramp).
+  # Two lists, ranked separately: a spot repair is maintenance, a missing sidewalk is new
+  # construction, and Project Sidewalk's magnitudes for the two are not on a common scale.
+  # Crosswalk is left out: faded paint is road maintenance, not a sidewalk barrier.
+  lists:
+    repair: [NoCurbRamp, Obstacle, SurfaceProblem, CurbRamp]
+    missing_sidewalk: [NoSidewalk]
+
+barrier:
+  # Magnitude = -(Project Sidewalk access-score term) for the cluster, using the engine's published
+  # constants in accessScoreConfig.json: base weight x severity/quality multiplier + tag deltas.
+  # NoSidewalk is a street-condition term there; one cluster counts |w| / saturation_count.
+  weights_preset: default    # or: barriers, missing_ramps (Project Sidewalk's named presets)
+
+validity:
+  # Human votes only, rebuilt from validations.csv. SidewalkAI votes are 48% of all validations and
+  # abstain on 96% of obstacles, so they are not used unless use_ai_votes is set.
+  use_ai_votes: false
+  drop_if_humans_disagree: true    # human disagree > agree on the cluster's labels
+  weight_confirmed: 1.0            # human agree > disagree
+  weight_unvalidated: 0.8          # no decisive human vote, at least one high-quality labeller
+  weight_unvalidated_low_quality: 0.6
+
+demand:
+  radius_m: 400                    # about a five-minute walk; linear decay to zero at the radius
+  weights:                         # combined after each component is turned into a 0-1 percentile
+    transit: 0.30                  # weekday trips at PRT stops in range
+    destinations: 0.30             # weighted destinations in range (below)
+    vulnerability: 0.25            # tract: share 65+, with a disability, without a car; density
+    safety: 0.15                   # pedestrian crashes nearby, High Injury Network
+  destination_weights:             # county asset-map categories, plus hospitals
+    schools: 1.0
+    universities: 0.5
+    hospitals: 1.0
+    health_centers: 0.75
+    doctors_offices: 0.5
+    pharmacies: 0.75
+    senior_centers: 1.0
+    nursing_homes: 1.0
+    libraries: 0.5
+    supermarkets: 0.75
+    affordable_housing: 0.75
+    child_care_centers: 0.5
+    rec_centers: 0.5
+    parks_and_facilities: 0.25
+    food_banks: 0.5
+    homeless_shelters: 0.5
+    va_facilities: 0.75
+  vulnerability_vars: [pct_65_plus, pct_disability, pct_zero_vehicle_hh, pop_density]
+  crash_radius_m: 100
+  crash_years: [2019, 2020, 2021, 2022, 2023, 2024, 2025]
+  hin_radius_m: 50
+  use_311: false                   # 311 volume tracks who reports, not where barriers are
+
+priority:
+  # priority = magnitude x validity x (demand_floor + (1 - demand_floor) x demand)
+  # The floor keeps a severe barrier on a quiet street from scoring zero.
+  demand_floor: 0.2
+
+evaluation:
+  top_k: [50, 100, 500]
+  n_weight_draws: 300              # Dirichlet draws around the demand weights
+  dirichlet_concentration: 20      # higher = draws stay closer to the weights above
+  radius_alternatives: [200, 800]
+  floor_alternatives: [0.0, 0.5]
+  seed: 10718

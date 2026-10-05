@@ -1,0 +1,453 @@
+<title>Pittsburgh Repair Priorities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;700;800&family=Overpass+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground: #f0f1ee; --surface: #fafaf8; --surface-2: #e8eae6; --ink: #16191c; --ink-2: #4b5158; --muted: #6f757c;
+  --rule: #d6d9d4; --rule-strong: #b6bab4; --link: #1f5fae; --dome: #dfa200; --flag: #b8322b; --focus: #1f5fae;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s-miss: #4a3aa7; --pt-rest: #8f959b; --closed: #cdd0cb;
+  --meter: #2a78d6; --meter-track: #dde6f3; --sel-bg: #e3ecf8;
+  --font-display: "Overpass", "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Overpass Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #101214; --surface: #171a1d; --surface-2: #20242a; --ink: #e8ebee; --ink-2: #a8afb6; --muted: #858c93;
+    --rule: #282c31; --rule-strong: #3a3f45; --link: #86b9f2; --dome: #edb92b; --flag: #f07a72; --focus: #86b9f2;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s-miss: #9085e9; --pt-rest: #6b7178; --closed: #2e3237;
+    --meter: #3987e5; --meter-track: #1f2f45; --sel-bg: #1c2b3f;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #101214; --surface: #171a1d; --surface-2: #20242a; --ink: #e8ebee; --ink-2: #a8afb6; --muted: #858c93;
+  --rule: #282c31; --rule-strong: #3a3f45; --link: #86b9f2; --dome: #edb92b; --flag: #f07a72; --focus: #86b9f2;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s-miss: #9085e9; --pt-rest: #6b7178; --closed: #2e3237;
+  --meter: #3987e5; --meter-track: #1f2f45; --sel-bg: #1c2b3f;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--ground); }
+body { color: var(--ink); font: 400 15px/1.55 var(--font-body); padding-inline: 20px; -webkit-font-smoothing: antialiased; }
+a { color: var(--link); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.page { max-width: 1320px; margin-inline: auto; padding-block: 28px 64px; }
+
+header .eyebrow { font: 500 12px/1.4 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+h1 { font: 800 clamp(30px, 4.4vw, 44px)/1.04 var(--font-display); letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+.dek { font-size: 17px; color: var(--ink-2); margin: 0 0 18px; max-width: 70ch; text-wrap: pretty; }
+.domes { height: 12px; margin: 0 0 18px; background-image: radial-gradient(circle, var(--dome) 0 2.8px, transparent 3.3px); background-size: 10px 10px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); border-top: 1px solid var(--rule-strong); border-bottom: 1px solid var(--rule); margin-bottom: 18px; }
+.fact { padding: 12px 16px 12px 0; }
+.fact + .fact { border-left: 1px solid var(--rule); padding-left: 16px; }
+@media (max-width: 720px) { .fact + .fact { border-left: 0; padding-left: 0; } .fact { border-bottom: 1px solid var(--rule); } }
+.fact .v { font: 700 24px/1.1 var(--font-display); }
+.fact .l { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.4; }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin: 0 0 12px; }
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: 600 13.5px/1 var(--font-body); color: var(--ink-2); background: transparent; border: 0; padding: 9px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule-strong); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; font: 500 13px/1 var(--font-body); color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 999px; padding: 6px 11px 6px 9px; cursor: pointer; }
+.chip[aria-pressed="false"] { opacity: 0.5; }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; }
+label.inline { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); }
+select { font: 500 13.5px var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 7px 8px; }
+
+/* workspace */
+.work { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 14px; align-items: start; }
+@media (max-width: 1000px) { .work { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.mapbox canvas { display: block; width: 100%; height: 640px; touch-action: none; cursor: grab; }
+@media (max-width: 1000px) { .mapbox canvas { height: 460px; } }
+.mapbox canvas.dragging { cursor: grabbing; }
+.zoom { position: absolute; top: 10px; right: 10px; display: grid; gap: 4px; }
+.zoom button { width: 32px; height: 32px; font: 600 16px/1 var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 6px; cursor: pointer; }
+.maplegend { position: absolute; left: 10px; bottom: 10px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); display: grid; gap: 4px; max-width: calc(100% - 20px); }
+.maplegend span.k { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: -1px; }
+.maplegend span.sq { border-radius: 2px; }
+.maphint { position: absolute; right: 10px; bottom: 10px; font-size: 12px; color: var(--muted); background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 2px 6px; border-radius: 4px; }
+@media (max-width: 600px) { .maphint { display: none; } }
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 7px 9px; font-size: 12.5px; box-shadow: 0 6px 18px rgb(0 0 0 / 0.14); max-width: 260px; }
+#tip b { font-variant-numeric: tabular-nums; }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; display: flex; flex-direction: column; max-height: 640px; min-height: 0; }
+@media (max-width: 1000px) { .panel { max-height: none; } }
+.detail { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+.detail .empty { color: var(--muted); font-size: 14px; margin: 0; }
+.detail h2 { font: 700 18px/1.25 var(--font-display); margin: 0 0 4px; }
+.detail .sub { font-size: 13px; color: var(--ink-2); margin: 0 0 10px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin: 8px 0 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.meters { display: grid; grid-template-columns: 96px 1fr 38px; gap: 5px 8px; align-items: center; font-size: 12.5px; margin-top: 10px; }
+.meters .bar { height: 6px; background: var(--meter-track); border-radius: 3px; overflow: hidden; }
+.meters .bar i { display: block; height: 100%; background: var(--meter); border-radius: 3px; }
+.meters .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.meters .sublabel { padding-left: 12px; color: var(--muted); }
+.pill { display: inline-block; font: 500 11px/1 var(--font-mono); letter-spacing: 0.03em; padding: 4px 6px 3px; border-radius: 3px; border: 1px solid var(--rule-strong); color: var(--ink-2); white-space: nowrap; }
+.pill.warn { border-color: color-mix(in srgb, var(--flag) 55%, var(--rule)); color: var(--flag); }
+.pill.ok { border-color: var(--rule-strong); color: var(--ink); }
+.listhead { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; font-size: 12.5px; color: var(--muted); }
+.list { overflow-y: auto; min-height: 0; flex: 1; }
+@media (max-width: 1000px) { .list { max-height: 520px; } }
+.row { display: grid; grid-template-columns: 46px 1fr auto; gap: 2px 10px; width: 100%; text-align: left; font: inherit; color: inherit; background: transparent; border: 0; border-top: 1px solid var(--rule); padding: 8px 16px; cursor: pointer; }
+.row:hover { background: color-mix(in srgb, var(--sel-bg) 55%, transparent); }
+.row[aria-current="true"] { background: var(--sel-bg); }
+.row .rk { font: 600 14px/1.3 var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.row .ty { font-size: 13.5px; line-height: 1.3; }
+.row .ty .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.row .nb { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.row .sc { grid-column: 3; grid-row: 1 / span 2; align-self: center; font: 500 12.5px var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+section.notes { max-width: 900px; margin-top: 40px; }
+section.notes h2 { font: 700 24px/1.2 var(--font-display); margin: 34px 0 10px; text-wrap: balance; }
+section.notes p, section.notes li { max-width: 72ch; }
+.formula { font: 500 14px/1.6 var(--font-mono); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; }
+.tbl { overflow-x: auto; border-top: 1px solid var(--rule-strong); margin: 10px 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th { font: 600 11.5px/1.3 var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .mini { display: inline-block; height: 6px; background: var(--meter); border-radius: 3px; vertical-align: 1px; margin-right: 6px; }
+ul.plain { padding-left: 20px; }
+ul.plain li { margin-bottom: 6px; }
+footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 12.5px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">CMU 10-718 · Tier 2 · run <span id="run-id"></span></p>
+    <h1>Pittsburgh Repair Priorities</h1>
+    <p class="dek">Every sidewalk barrier Project Sidewalk volunteers have already found inside the city, ranked by how bad it is, how well validators back it, and how many people need that spot. Built from existing labels only: no imagery, no model.</p>
+    <div class="domes" role="presentation"></div>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="Filters">
+    <div class="seg" id="list-toggle" role="group" aria-label="List">
+      <button type="button" id="btn-repair" data-list="repair" aria-pressed="true">Spot repairs</button>
+      <button type="button" id="btn-missing" data-list="missing_sidewalk" aria-pressed="false">Missing sidewalks</button>
+    </div>
+    <div class="chips" id="type-chips" aria-label="Barrier types"></div>
+    <label class="inline" for="topn">Highlight
+      <select id="topn">
+        <option value="50">top 50</option>
+        <option value="100" selected>top 100</option>
+        <option value="250">top 250</option>
+        <option value="500">top 500</option>
+      </select>
+    </label>
+    <label class="inline" for="confirmed-only"><input type="checkbox" id="confirmed-only"> Human-confirmed only</label>
+  </div>
+
+  <div class="work">
+    <div class="mapbox">
+      <canvas id="map" tabindex="0" aria-label="Map of ranked barriers. Use the list to browse; plus and minus keys zoom."></canvas>
+      <div class="zoom">
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" id="zoom-reset" aria-label="Reset view">⟲</button>
+      </div>
+      <div class="maplegend" id="map-legend"></div>
+      <div class="maphint">Scroll to zoom · drag to pan · click a dot</div>
+    </div>
+    <aside class="panel" aria-label="Ranked barriers">
+      <div class="detail" id="detail" aria-live="polite"><p class="empty">Select a dot or a row to see why it ranks where it does.</p></div>
+      <div class="listhead"><span id="list-count"></span><span>priority</span></div>
+      <div class="list" id="list"></div>
+    </aside>
+  </div>
+
+  <section class="notes">
+    <h2>How the ranking works</h2>
+    <p>Each barrier is a Project Sidewalk <em>label cluster</em>: one physical feature, however many volunteers marked it. Only clusters inside the city boundary are ranked.</p>
+    <div class="formula">priority = magnitude × validity × (0.2 + 0.8 × demand)</div>
+    <ul class="plain">
+      <li><strong>Magnitude</strong> uses Project Sidewalk's own published access-score constants: base weight × severity multiplier, plus tag adjustments. That makes a severity-3 missing ramp with "no alternate route" 1.5, and a severity-3 obstacle or surface problem 1.0. Curb ramps enter only when their score is negative, meaning a deficient ramp.</li>
+      <li><strong>Validity</strong> uses human votes only. It is 1.0 if validators agreed, 0.8 if unvalidated, and 0.6 if also labelled by a low-quality account. Barriers humans voted down are dropped (86). SidewalkAI votes are ignored.</li>
+      <li><strong>Demand</strong> is the weighted average of four 0–1 percentile scores: weekday transit trips within 400 m (0.30), weighted destinations within 400 m (0.30), a tract vulnerability index of residents 65+, disability, no car and density (0.25), and pedestrian crashes within 100 m or the High Injury Network (0.15).</li>
+      <li><strong>Two lists.</strong> Spot repairs and missing sidewalks are ranked separately. A cracked ramp is maintenance, an absent sidewalk is new construction, and Project Sidewalk's magnitudes for the two are not on one scale.</li>
+    </ul>
+
+    <h2>How much to trust it</h2>
+    <p>No ranking has ground truth. The evaluation instead measures how much the order moves when each judgment call changes. The table shows the share of the default top 100 still in the top 100 under each change.</p>
+    <div class="tbl" id="robust-table"></div>
+    <p id="robust-note"></p>
+
+    <h2>Who it serves, and who it can't see</h2>
+    <div class="tbl" id="equity-table"></div>
+    <p id="equity-note"></p>
+
+    <h2>Limits worth saying out loud</h2>
+    <ul class="plain" id="limits"></ul>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, parent) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") e.textContent = v; else if (k === "style") Object.assign(e.style, v); else e.setAttribute(k, v);
+  }
+  if (parent) parent.appendChild(e);
+  return e;
+};
+const nf = new Intl.NumberFormat("en-US");
+const pct = v => Math.round(v * 100) + "%";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* barrier rows are packed as arrays; see build_map.py for the field order */
+const F = DATA.fields;
+const I = Object.fromEntries(F.map((f, i) => [f, i]));
+const TYPES = {
+  ramp: { label: "Curb ramp missing or deficient", color: "--s1" },
+  obstacle: { label: "Obstacle", color: "--s2" },
+  surface: { label: "Surface problem", color: "--s3" },
+  missing: { label: "Missing sidewalk", color: "--s-miss" },
+};
+const TYPE_OF = { NoCurbRamp: "ramp", CurbRamp: "ramp", Obstacle: "obstacle", SurfaceProblem: "surface", NoSidewalk: "missing" };
+const LABEL = { NoCurbRamp: "Missing curb ramp", CurbRamp: "Deficient curb ramp", Obstacle: "Obstacle", SurfaceProblem: "Surface problem", NoSidewalk: "Missing sidewalk" };
+const rows = DATA.barriers;
+
+const state = { list: "repair", types: new Set(["ramp", "obstacle", "surface"]), topn: 100, confirmedOnly: false, selected: null };
+
+/* ---------- filtering ---------- */
+function visible() {
+  return rows.filter(r => r[I.list] === state.list && state.types.has(TYPE_OF[r[I.type]]) && (!state.confirmedOnly || r[I.validation] === "confirmed"));
+}
+
+/* ---------- map ---------- */
+const canvas = $("#map");
+const ctx = canvas.getContext("2d");
+const K = Math.cos(40.44 * Math.PI / 180);
+let bounds = null, view = { s: 1, tx: 0, ty: 0 }, base = { s: 1, tx: 0, ty: 0 };
+let drawn = [];   // [x, y, row] for highlighted points, for hit testing
+
+function projectRaw(lon, lat) { return [lon * K, -lat]; }
+function computeBounds() {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const f of DATA.hoods.features) for (const poly of polys(f)) for (const ring of poly) for (const c of ring) {
+    const [x, y] = projectRaw(c[0], c[1]); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  bounds = { x0, y0, x1, y1 };
+}
+function polys(f) { return f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates; }
+function fit() {
+  const w = canvas.clientWidth, h = canvas.clientHeight, pad = 18;
+  const s = Math.min((w - 2 * pad) / (bounds.x1 - bounds.x0), (h - 2 * pad) / (bounds.y1 - bounds.y0));
+  base = { s, tx: (w - s * (bounds.x1 - bounds.x0)) / 2 - s * bounds.x0, ty: (h - s * (bounds.y1 - bounds.y0)) / 2 - s * bounds.y0 };
+  view = { ...base };
+}
+function toScreen(lon, lat) { const [x, y] = projectRaw(lon, lat); return [x * view.s + view.tx, y * view.s + view.ty]; }
+
+function draw() {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = css("--surface"); ctx.fillRect(0, 0, w, h);
+  const opened = css("--surface-2"), closed = css("--closed"), edge = css("--rule-strong");
+  ctx.lineWidth = 0.8; ctx.strokeStyle = edge;
+  for (const f of DATA.hoods.features) {
+    ctx.beginPath();
+    for (const poly of polys(f)) for (const ring of poly) ring.forEach((c, i) => { const [x, y] = toScreen(c[0], c[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.fillStyle = f.properties.opened ? opened : closed;
+    ctx.fill("evenodd"); ctx.stroke();
+  }
+  const vis = visible();
+  const rad = Math.max(1.2, Math.min(3, 1.2 * Math.sqrt(view.s / base.s)));
+  ctx.fillStyle = css("--pt-rest"); ctx.globalAlpha = 0.55;
+  for (const r of vis) { if (r[I.rank] <= state.topn) continue; const [x, y] = toScreen(r[I.lon], r[I.lat]); ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  const surface = css("--surface");
+  drawn = [];
+  const top = vis.filter(r => r[I.rank] <= state.topn).sort((a, b) => b[I.rank] - a[I.rank]);
+  const big = Math.max(4.5, Math.min(7.5, 4.5 * Math.sqrt(view.s / base.s)));
+  for (const r of top) {
+    const [x, y] = toScreen(r[I.lon], r[I.lat]);
+    ctx.beginPath(); ctx.arc(x, y, big, 0, 6.2832);
+    ctx.fillStyle = css(TYPES[TYPE_OF[r[I.type]]].color); ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = surface; ctx.stroke();
+    drawn.push([x, y, r]);
+  }
+  if (state.selected) {
+    const [x, y] = toScreen(state.selected[I.lon], state.selected[I.lat]);
+    ctx.beginPath(); ctx.arc(x, y, big + 5, 0, 6.2832); ctx.lineWidth = 2.5; ctx.strokeStyle = css("--ink"); ctx.stroke();
+  }
+}
+
+function nearest(mx, my, maxd = 11) {
+  let best = null, bd = maxd * maxd;
+  for (const [x, y, r] of drawn) { const d = (x - mx) ** 2 + (y - my) ** 2; if (d <= bd) { bd = d; best = r; } }
+  return best;
+}
+function zoomAt(mx, my, f) {
+  const s = Math.max(base.s * 0.8, Math.min(base.s * 40, view.s * f)); const k = s / view.s;
+  view.tx = mx - k * (mx - view.tx); view.ty = my - k * (my - view.ty); view.s = s; draw();
+}
+let drag = null;
+canvas.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty, moved: false }; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("pointermove", e => {
+  const b = canvas.getBoundingClientRect(), mx = e.clientX - b.left, my = e.clientY - b.top;
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) { drag.moved = true; canvas.classList.add("dragging"); }
+    if (drag.moved) { view.tx = drag.tx + dx; view.ty = drag.ty + dy; draw(); $("#tip").hidden = true; return; }
+  }
+  const r = nearest(mx, my);
+  const tip = $("#tip");
+  if (!r) { tip.hidden = true; return; }
+  tip.replaceChildren();
+  el("b", { text: `#${r[I.rank]}` }, tip); tip.append(` ${LABEL[r[I.type]]}`); el("br", {}, tip);
+  tip.append(r[I.hood] || "—");
+  tip.hidden = false;
+  tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, e.clientX + 14) + "px";
+  tip.style.top = Math.max(8, e.clientY - tip.offsetHeight - 10) + "px";
+});
+canvas.addEventListener("pointerup", e => {
+  const b = canvas.getBoundingClientRect();
+  if (drag && !drag.moved) { const r = nearest(e.clientX - b.left, e.clientY - b.top); if (r) select(r, true); }
+  drag = null; canvas.classList.remove("dragging");
+});
+canvas.addEventListener("pointerleave", () => { $("#tip").hidden = true; });
+canvas.addEventListener("wheel", e => { e.preventDefault(); const b = canvas.getBoundingClientRect(); zoomAt(e.clientX - b.left, e.clientY - b.top, e.deltaY < 0 ? 1.25 : 0.8); }, { passive: false });
+canvas.addEventListener("dblclick", () => { view = { ...base }; draw(); });
+canvas.addEventListener("keydown", e => {
+  const w = canvas.clientWidth / 2, h = canvas.clientHeight / 2;
+  if (e.key === "+" || e.key === "=") zoomAt(w, h, 1.3); else if (e.key === "-") zoomAt(w, h, 1 / 1.3); else if (e.key === "0") { view = { ...base }; draw(); }
+});
+$("#zoom-in").onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.4);
+$("#zoom-out").onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1 / 1.4);
+$("#zoom-reset").onclick = () => { view = { ...base }; draw(); };
+
+/* ---------- list + detail ---------- */
+function renderList() {
+  const vis = visible().filter(r => r[I.rank] <= Math.max(state.topn, 100)).sort((a, b) => a[I.rank] - b[I.rank]).slice(0, 500);
+  const total = visible().length;
+  $("#list-count").textContent = `${nf.format(total)} ${state.list === "repair" ? "spot repairs" : "missing sidewalks"} · showing ranks 1–${Math.max(state.topn, 100)}`;
+  const box = $("#list"); box.replaceChildren();
+  for (const r of vis) {
+    const b = el("button", { type: "button", class: "row", "aria-current": state.selected === r ? "true" : "false" }, box);
+    el("span", { class: "rk", text: "#" + r[I.rank] }, b);
+    const ty = el("span", { class: "ty" }, b);
+    el("span", { class: "dot", style: { background: `var(${TYPES[TYPE_OF[r[I.type]]].color})` } }, ty);
+    ty.append(LABEL[r[I.type]] + (r[I.sev] ? ` · severity ${r[I.sev]}` : ""));
+    el("span", { class: "sc", text: r[I.priority].toFixed(2) }, b);
+    el("span", { class: "nb", text: `${r[I.hood] || "—"}${r[I.validation] === "confirmed" ? " · confirmed" : ""}${r[I.reverify] ? " · re-check imagery" : ""}` }, b);
+    b.addEventListener("click", () => select(r, false));
+    r._row = b;
+  }
+}
+function gsvUrl(r) {
+  return `https://www.google.com/maps/@?api=1&map_action=pano&pano=${encodeURIComponent(r[I.pano])}&heading=${r[I.heading]}&pitch=${r[I.pitch]}`;
+}
+function select(r, fromMap) {
+  state.selected = r;
+  document.querySelectorAll(".row[aria-current='true']").forEach(x => x.setAttribute("aria-current", "false"));
+  if (r._row && r._row.isConnected) { r._row.setAttribute("aria-current", "true"); if (fromMap) r._row.scrollIntoView({ block: "nearest" }); }
+  const d = $("#detail"); d.replaceChildren();
+  el("h2", { text: `Rank ${r[I.rank]} — ${LABEL[r[I.type]]}` }, d);
+  el("p", { class: "sub", text: `${r[I.hood] || "Neighbourhood unknown"} · #${r[I.typeRank]} among ${LABEL[r[I.type]].toLowerCase()}s` }, d);
+  const pills = el("div", {}, d);
+  el("span", { class: r[I.validation] === "confirmed" ? "pill ok" : "pill", text: r[I.validation] === "confirmed" ? `confirmed ${r[I.agree]}–${r[I.disagree]}` : r[I.validation] }, pills);
+  pills.append(" ");
+  if (r[I.reverify]) { el("span", { class: "pill warn", text: "newer imagery exists" }, pills); pills.append(" "); }
+  if (r[I.hin]) el("span", { class: "pill warn", text: "High Injury Network" }, pills);
+  const m = el("div", { class: "meters" }, d);
+  const meter = (label, v, max = 1, fmt = x => x.toFixed(2)) => {
+    el("span", { text: label.replace(/^· /, ""), class: label.startsWith("· ") ? "sublabel" : "" }, m);
+    const bar = el("span", { class: "bar" }, m); el("i", { style: { width: Math.max(0, Math.min(100, v / max * 100)) + "%" } }, bar);
+    el("span", { class: "val", text: fmt(v) }, m);
+  };
+  meter("Priority", r[I.priority], 2); meter("Magnitude", r[I.magnitude], 2); meter("Demand", r[I.demand]);
+  meter("· transit", r[I.transit]); meter("· destinations", r[I.dest_score]); meter("· vulnerability", r[I.vuln]); meter("· safety", r[I.safety]);
+  const kv = el("dl", { class: "kv" }, d);
+  const row = (k, v) => { if (v === "" || v == null) return; el("dt", { text: k }, kv); const dd = el("dd", {}, kv); typeof v === "string" ? (dd.textContent = v) : dd.appendChild(v); };
+  row("Severity", r[I.sev] ? `${r[I.sev]} of 3` : "none recorded");
+  row("Tags", r[I.tags]);
+  row("Nearest stop", r[I.stop] ? `${r[I.stop]} (${r[I.stopM]} m)` : "");
+  row("Draws people", r[I.dest]);
+  row("Imagery", r[I.imagery] ? `captured ${r[I.imagery]}` : "");
+  if (r[I.pano]) { const a = el("a", { href: gsvUrl(r), target: "_blank", rel: "noopener", text: "Open in Street View ↗" }); row("Look", a); }
+  row("Cluster", `${r[I.cluster]} · ${r[I.labels]} label${r[I.labels] === 1 ? "" : "s"}`);
+  draw();
+}
+/* "Draws people" wants the destination name, not the score; stored separately */
+const _rowFn = select;
+
+/* ---------- controls ---------- */
+function renderChips() {
+  const box = $("#type-chips"); box.replaceChildren();
+  const keys = state.list === "repair" ? ["ramp", "obstacle", "surface"] : ["missing"];
+  for (const k of keys) {
+    const b = el("button", { type: "button", class: "chip", id: `chip-${k}`, "aria-pressed": state.types.has(k) ? "true" : "false" }, box);
+    el("span", { class: "dot", style: { background: `var(${TYPES[k].color})` } }, b);
+    b.append(TYPES[k].label);
+    b.onclick = () => { state.types.has(k) ? state.types.delete(k) : state.types.add(k); if (!state.types.size) state.types.add(k); refresh(); };
+  }
+  const lg = $("#map-legend"); lg.replaceChildren();
+  for (const k of keys) { const line = el("div", {}, lg); el("span", { class: "k", style: { background: `var(${TYPES[k].color})` } }, line); line.append(`${TYPES[k].label}, top ${state.topn}`); }
+  const rest = el("div", {}, lg); el("span", { class: "k", style: { background: "var(--pt-rest)" } }, rest); rest.append("Lower-ranked");
+  const cl = el("div", {}, lg); el("span", { class: "k sq", style: { background: "var(--closed)" } }, cl); cl.append("Never opened for auditing");
+}
+function refresh() { state.selected = null; $("#detail").replaceChildren(el("p", { class: "empty", text: "Select a dot or a row to see why it ranks where it does." })); renderChips(); renderList(); draw(); }
+document.querySelectorAll("#list-toggle button").forEach(b => b.onclick = () => {
+  state.list = b.dataset.list;
+  document.querySelectorAll("#list-toggle button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  state.types = new Set(state.list === "repair" ? ["ramp", "obstacle", "surface"] : ["missing"]);
+  refresh();
+});
+$("#topn").onchange = e => { state.topn = +e.target.value; refresh(); };
+$("#confirmed-only").onchange = e => { state.confirmedOnly = e.target.checked; refresh(); };
+
+/* ---------- static sections ---------- */
+function table(host, head, body, numeric = []) {
+  const t = el("table", {}, host); const tr = el("tr", {}, el("thead", {}, t));
+  head.forEach((h, i) => el("th", { class: numeric[i] ? "n" : "", text: h }, tr));
+  const tb = el("tbody", {}, t);
+  for (const r of body) { const row = el("tr", {}, tb); r.forEach((c, i) => { const td = el("td", { class: numeric[i] ? "n" : "" }, row); typeof c === "string" ? (td.textContent = c) : td.appendChild(c); }); }
+}
+function mini(v) { const s = document.createElement("span"); const i = el("span", { class: "mini", style: { width: Math.round(v * 60) + "px" } }, s); s.append(pct(v)); return s; }
+function renderStatic() {
+  const E = DATA.eval, S = DATA.summary;
+  $("#run-id").textContent = DATA.run_id;
+  const facts = $("#facts");
+  const fact = (v, l) => { const f = el("div", { class: "fact" }, facts); el("div", { class: "v", text: v }, f); el("div", { class: "l", text: l }, f); };
+  fact(nf.format(S.repair), "spot repairs ranked (curb ramps, obstacles, surface problems)");
+  fact(nf.format(S.missing), "missing-sidewalk locations ranked separately");
+  fact(pct(E.robust_top100_repair), "of the repair top 100 keeps its place in at least 80% of 300 random weightings");
+  fact(pct(E.blind_spot_share), "of residents live in tracts under 10% audited, which this list cannot see");
+
+  table($("#robust-table"), ["Change", "Spot repairs", "Missing sidewalks"],
+    E.changes.map(c => [c.change, mini(c.repair), mini(c.missing_sidewalk)]), [0, 1, 1]);
+  $("#robust-note").textContent = E.robust_note;
+  table($("#equity-table"), ["Tracts in the top quartile of…", "Share of repair top 100", "Share of all known repairs", "Share of residents"],
+    E.equity.map(q => [q.label, pct(q.top), pct(q.all), pct(q.residents)]), [0, 1, 1, 1]);
+  $("#equity-note").textContent = E.equity_note;
+  const lim = $("#limits");
+  for (const t of DATA.limits) el("li", { text: t }, lim);
+  $("#foot").textContent = DATA.footer;
+}
+
+computeBounds();
+renderStatic();
+new ResizeObserver(() => { const keep = view.s / base.s; fit(); if (keep > 1.001) { /* keep default view on resize */ } draw(); }).observe(canvas);
+fit();
+refresh();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
