@@ -16,6 +16,12 @@
 # torchvision on Linux. On macOS or a CPU-only box, comment that line out --
 # the env will still solve and evaluation still runs, just without a GPU.
 name: sidewalk
+#
+# NOTE ON THE VM: `conda env create -f` still fails Anaconda's Terms-of-Service check there
+# (even with `nodefaults` listed), because .condarc carries `defaults`. The shared env at
+# /opt/miniconda/envs/sidewalk was built with
+#   conda create -p /opt/miniconda/envs/sidewalk -c conda-forge --override-channels <deps below>
+# followed by `pip install` of the pip list, with cuda-version dropped (CPU box).
 channels:
   - conda-forge
 dependencies:
@@ -50,6 +56,10 @@ dependencies:
   - ipykernel
   - nbstripout          # strip notebook outputs, see README
   - jq                  # scripts/ read run_manifest.json with it
+  - pyarrow
+  - python-duckdb       # SQL straight over the parquet shards, no full load
+  - geopandas           # Tier 2 spatial joins: labels x streets x stops x tracts
+  - pyogrio
   - pip
   - pip:
       - gradio                  # upstream installs this via pip too
@@ -58,3 +68,5 @@ dependencies:
       - azure-storage-blob      # blob data plane
       - azure-identity          # managed-identity / az-login auth on the VM
       - wandb                   # live training metrics
+      - openai                  # Responses API vision baseline
+      - brotli>=1.2.0           # HTTP response decoding for the OpenAI client
