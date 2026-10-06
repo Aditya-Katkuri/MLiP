@@ -6,8 +6,10 @@ a 200-word BOWKMeansTrainer codebook, mean L1 histograms, nearest prototype
 by symmetric chi-square. No SVM and no neural net.
 
 Split: the dataset's own train and test columns. Val is counted and then
-left unused. The surrogate class no_obstacles is counted and left out of
-the four-way fit and the four-way metrics.
+left unused. Crosswalk and the surrogate class no_obstacles are counted
+and left out of the fit and the metrics. The codebook is fit only on the
+scored classes, so dropping Crosswalk after a four-class run is not the
+same result.
 """
 
 from __future__ import annotations
@@ -25,7 +27,7 @@ from multiprocessing import get_context
 import cv2
 import numpy as np
 
-SCORED = ("Crosswalk", "CurbRamp", "Obstacle", "SurfaceProblem")
+SCORED = ("CurbRamp", "Obstacle", "SurfaceProblem")
 GRID_STEP = 32
 CAP_SPARSE = 40
 CAP_DENSE = 40
@@ -223,7 +225,7 @@ def select_items(audit_result: dict, data_dir: str, train_cap: int, codebook_n: 
         "train": train_items,
         "test": test_items,
         "selection": selection,
-        "excluded_from_four_way": excluded,
+        "excluded_from_scored": excluded,
     }
 
 
@@ -586,7 +588,7 @@ def main() -> None:
         flush=True,
     )
     picked = select_items(audited, args.data_dir, args.train_cap, args.codebook_per_class)
-    print(f"excluded_from_four_way {picked['excluded_from_four_way']}", flush=True)
+    print(f"excluded_from_scored {picked['excluded_from_scored']}", flush=True)
     for label, info in picked["selection"].items():
         print(
             f"select {label}: available {info['n_train_available']} used {info['n_train_used']} "
@@ -604,7 +606,7 @@ def main() -> None:
     if bad_role:
         raise SystemExit(f"refusing to pool splits; bad rows {bad_role[:8]}")
     if any(it["label"] not in SCORED for it in items):
-        raise SystemExit("scored items include a label outside the four classes")
+        raise SystemExit("scored items include a label outside the scored classes")
 
     records = extract_all(items, args.workers)
     vocab = build_vocabulary(records, args.words)
@@ -639,7 +641,7 @@ def main() -> None:
         "data_dir": args.data_dir,
         "scored_classes": labels,
         "null_class": "no_obstacles",
-        "excluded_from_four_way": picked["excluded_from_four_way"],
+        "excluded_from_scored": picked["excluded_from_scored"],
         "audit": public_audit(audited),
         "method": {
             "grid_step": GRID_STEP,

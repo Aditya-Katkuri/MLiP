@@ -1,18 +1,22 @@
 {
   "cv2": "4.12.0",
-  "seconds": 37.3,
+  "seconds": 31.3,
   "data_dir": "/data/datasets/sidewalk-data",
   "scored_classes": [
-    "Crosswalk",
     "CurbRamp",
     "Obstacle",
     "SurfaceProblem"
   ],
   "null_class": "no_obstacles",
-  "excluded_from_four_way": {
-    "train": {},
-    "val": {},
+  "excluded_from_scored": {
+    "train": {
+      "Crosswalk": 1446
+    },
+    "val": {
+      "Crosswalk": 124
+    },
     "test": {
+      "Crosswalk": 57,
       "no_obstacles": 204
     }
   },
@@ -150,15 +154,6 @@
     "kmeans": "cv2.BOWKMeansTrainer attempts=1 PP centers, 20 iter, eps 0.1, RNG seed 0"
   },
   "selection": {
-    "Crosswalk": {
-      "n_train_available": 1446,
-      "n_train_used": 500,
-      "used_all_train_images": false,
-      "below_train_cap": false,
-      "n_codebook": 200,
-      "seed": "sift-tagger-v1-Crosswalk",
-      "filename_sha256": "943cb685a539c35d9bfa63d4433215cf9a651f782103303dd04ec5df390f0138"
-    },
     "CurbRamp": {
       "n_train_available": 8324,
       "n_train_used": 500,
@@ -189,19 +184,9 @@
   },
   "bow_extractor_check": {
     "images_checked": 5,
-    "max_abs_l1_diff": 0.025
+    "max_abs_l1_diff": 0.012500000826548771
   },
   "train_used": {
-    "Crosswalk": {
-      "n": 500,
-      "n_hist": 500,
-      "n_too_few_descriptors": 0,
-      "desc_mean": 79.738,
-      "desc_min": 40,
-      "sizes": {
-        "1440x960": 500
-      }
-    },
     "CurbRamp": {
       "n": 500,
       "n_hist": 500,
@@ -234,16 +219,6 @@
     }
   },
   "test_used": {
-    "Crosswalk": {
-      "n": 57,
-      "n_hist": 57,
-      "n_too_few_descriptors": 0,
-      "desc_mean": 80.0,
-      "desc_min": 80,
-      "sizes": {
-        "1440x960": 57
-      }
-    },
     "CurbRamp": {
       "n": 761,
       "n_hist": 761,
@@ -278,75 +253,56 @@
   "metrics": {
     "per_class": [
       {
-        "label": "Crosswalk",
-        "precision": 0.08446866485013624,
-        "recall": 0.543859649122807,
-        "support": 57,
-        "tp": 31,
-        "predicted": 367,
-        "abstain": 0
-      },
-      {
         "label": "CurbRamp",
-        "precision": 0.6766666666666666,
-        "recall": 0.266754270696452,
+        "precision": 0.707089552238806,
+        "recall": 0.4980289093298292,
         "support": 761,
-        "tp": 203,
-        "predicted": 300,
+        "tp": 379,
+        "predicted": 536,
         "abstain": 0
       },
       {
         "label": "Obstacle",
-        "precision": 0.055776892430278883,
-        "recall": 0.4745762711864407,
+        "precision": 0.05975395430579965,
+        "recall": 0.576271186440678,
         "support": 59,
-        "tp": 28,
-        "predicted": 502,
+        "tp": 34,
+        "predicted": 569,
         "abstain": 0
       },
       {
         "label": "SurfaceProblem",
-        "precision": 0.45425867507886436,
-        "recall": 0.23645320197044334,
+        "precision": 0.47530864197530864,
+        "recall": 0.25287356321839083,
         "support": 609,
-        "tp": 144,
-        "predicted": 317,
+        "tp": 154,
+        "predicted": 324,
         "abstain": 0
       }
     ],
-    "macro_recall": 0.38041084824403576,
-    "accuracy": 0.2732166890982503,
-    "n_test": 1486,
-    "n_correct": 406,
+    "macro_recall": 0.44239121966296596,
+    "accuracy": 0.3967809657102869,
+    "n_test": 1429,
+    "n_correct": 567,
     "n_abstain": 0,
     "confusion": {
-      "Crosswalk": {
-        "Crosswalk": 31,
-        "CurbRamp": 6,
-        "Obstacle": 12,
-        "SurfaceProblem": 8
-      },
       "CurbRamp": {
-        "Crosswalk": 218,
-        "CurbRamp": 203,
-        "Obstacle": 183,
-        "SurfaceProblem": 157
+        "CurbRamp": 379,
+        "Obstacle": 220,
+        "SurfaceProblem": 162
       },
       "Obstacle": {
-        "Crosswalk": 15,
-        "CurbRamp": 8,
-        "Obstacle": 28,
+        "CurbRamp": 17,
+        "Obstacle": 34,
         "SurfaceProblem": 8
       },
       "SurfaceProblem": {
-        "Crosswalk": 103,
-        "CurbRamp": 83,
-        "Obstacle": 279,
-        "SurfaceProblem": 144
+        "CurbRamp": 140,
+        "Obstacle": 315,
+        "SurfaceProblem": 154
       }
     },
     "abstain": {
-      "Crosswalk": 0,
       "CurbRamp": 0,
       "Obstacle": 0,
       "SurfaceProblem": 0
@@ -355,9 +311,9 @@
       "label": "CurbRamp",
       "train_count": 8324,
       "n_correct": 761,
-      "n_test": 1486,
-      "accuracy": 0.5121130551816958
+      "n_test": 1429,
+      "accuracy": 0.5325402379286214
     }
   },
-  "recall_png": "/mnt/scratch/sift-tagger/out/sift-tagger-recall.png"
+  "recall_png": "/mnt/scratch/sift-tagger/out3/sift-tagger-recall.png"
 }
