@@ -1,0 +1,363 @@
+{
+  "cv2": "4.12.0",
+  "seconds": 37.3,
+  "data_dir": "/data/datasets/sidewalk-data",
+  "scored_classes": [
+    "Crosswalk",
+    "CurbRamp",
+    "Obstacle",
+    "SurfaceProblem"
+  ],
+  "null_class": "no_obstacles",
+  "excluded_from_four_way": {
+    "train": {},
+    "val": {},
+    "test": {
+      "no_obstacles": 204
+    }
+  },
+  "audit": {
+    "splits": {
+      "train": {
+        "n": 18826,
+        "expected_n": 18826,
+        "by_class": {
+          "Crosswalk": 1446,
+          "CurbRamp": 8324,
+          "Obstacle": 2073,
+          "SurfaceProblem": 6983
+        },
+        "expected_by_class": {
+          "Crosswalk": 1446,
+          "CurbRamp": 8324,
+          "Obstacle": 2073,
+          "SurfaceProblem": 6983
+        },
+        "class_counts_match_table": true,
+        "bad_split_column": 0,
+        "missing_files": 0,
+        "path_mismatch": 0,
+        "unparsed_city": 0,
+        "cities": {
+          "seattle": 5530,
+          "chicago": 4547,
+          "oradell": 3990,
+          "newberg": 1898,
+          "spgg": 1620,
+          "cdmx": 1049,
+          "walla_walla": 192
+        }
+      },
+      "val": {
+        "n": 3696,
+        "expected_n": 3696,
+        "by_class": {
+          "Crosswalk": 124,
+          "CurbRamp": 1772,
+          "Obstacle": 300,
+          "SurfaceProblem": 1500
+        },
+        "expected_by_class": {
+          "Crosswalk": 124,
+          "CurbRamp": 1772,
+          "Obstacle": 300,
+          "SurfaceProblem": 1500
+        },
+        "class_counts_match_table": true,
+        "bad_split_column": 0,
+        "missing_files": 0,
+        "path_mismatch": 0,
+        "unparsed_city": 0,
+        "cities": {
+          "columbus": 3108,
+          "amsterdam": 588
+        }
+      },
+      "test": {
+        "n": 1690,
+        "expected_n": 1690,
+        "by_class": {
+          "Crosswalk": 57,
+          "CurbRamp": 761,
+          "Obstacle": 59,
+          "SurfaceProblem": 609,
+          "no_obstacles": 204
+        },
+        "expected_by_class": {
+          "Crosswalk": 57,
+          "CurbRamp": 761,
+          "Obstacle": 59,
+          "SurfaceProblem": 609,
+          "no_obstacles": 204
+        },
+        "class_counts_match_table": true,
+        "bad_split_column": 0,
+        "missing_files": 0,
+        "path_mismatch": 0,
+        "unparsed_city": 0,
+        "cities": {
+          "pittsburgh": 1690
+        }
+      }
+    },
+    "disk": {
+      "train": {
+        "Crosswalk": 1446,
+        "CurbRamp": 8324,
+        "Obstacle": 2073,
+        "SurfaceProblem": 6983
+      },
+      "val": {
+        "Crosswalk": 124,
+        "CurbRamp": 1772,
+        "Obstacle": 300,
+        "SurfaceProblem": 1500
+      },
+      "test": {
+        "Crosswalk": 57,
+        "CurbRamp": 761,
+        "Obstacle": 59,
+        "SurfaceProblem": 609,
+        "no_obstacles": 204
+      }
+    },
+    "filename_overlap": {
+      "train_val": 0,
+      "train_test": 0,
+      "val_test": 0
+    },
+    "table_match": true,
+    "disk_match": true
+  },
+  "method": {
+    "grid_step": 32,
+    "cap_sparse": 40,
+    "cap_dense": 40,
+    "desc_cap": 80,
+    "min_descriptors": 5,
+    "words": 200,
+    "words_requested": 200,
+    "train_cap": 500,
+    "codebook_per_class": 200,
+    "chi2": "0.5 * sum (p-q)^2 / (p+q) over bins with p+q > 0",
+    "fit_splits": [
+      "train"
+    ],
+    "eval_splits": [
+      "test"
+    ],
+    "val_used_for_fit_or_score": false,
+    "kmeans": "cv2.BOWKMeansTrainer attempts=1 PP centers, 20 iter, eps 0.1, RNG seed 0"
+  },
+  "selection": {
+    "Crosswalk": {
+      "n_train_available": 1446,
+      "n_train_used": 500,
+      "used_all_train_images": false,
+      "below_train_cap": false,
+      "n_codebook": 200,
+      "seed": "sift-tagger-v1-Crosswalk",
+      "filename_sha256": "943cb685a539c35d9bfa63d4433215cf9a651f782103303dd04ec5df390f0138"
+    },
+    "CurbRamp": {
+      "n_train_available": 8324,
+      "n_train_used": 500,
+      "used_all_train_images": false,
+      "below_train_cap": false,
+      "n_codebook": 200,
+      "seed": "sift-tagger-v1-CurbRamp",
+      "filename_sha256": "513ee8a106d8dde18a1b7cbc13377b5ab61c3479f601fd3955dd4f4816c3b08c"
+    },
+    "Obstacle": {
+      "n_train_available": 2073,
+      "n_train_used": 500,
+      "used_all_train_images": false,
+      "below_train_cap": false,
+      "n_codebook": 200,
+      "seed": "sift-tagger-v1-Obstacle",
+      "filename_sha256": "08311ba5166da5e61cb669eeb4455a2ac82cb01aab9c6189c2b4a7defe347dbf"
+    },
+    "SurfaceProblem": {
+      "n_train_available": 6983,
+      "n_train_used": 500,
+      "used_all_train_images": false,
+      "below_train_cap": false,
+      "n_codebook": 200,
+      "seed": "sift-tagger-v1-SurfaceProblem",
+      "filename_sha256": "5f7340533c1a1ce34a8a0aa1257606f21530e502a680f4cc0c744249f5a7a600"
+    }
+  },
+  "bow_extractor_check": {
+    "images_checked": 5,
+    "max_abs_l1_diff": 0.025
+  },
+  "train_used": {
+    "Crosswalk": {
+      "n": 500,
+      "n_hist": 500,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 79.738,
+      "desc_min": 40,
+      "sizes": {
+        "1440x960": 500
+      }
+    },
+    "CurbRamp": {
+      "n": 500,
+      "n_hist": 500,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 80.0,
+      "desc_min": 80,
+      "sizes": {
+        "1440x960": 500
+      }
+    },
+    "Obstacle": {
+      "n": 500,
+      "n_hist": 500,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 79.92,
+      "desc_min": 40,
+      "sizes": {
+        "1440x960": 500
+      }
+    },
+    "SurfaceProblem": {
+      "n": 500,
+      "n_hist": 500,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 79.84,
+      "desc_min": 40,
+      "sizes": {
+        "1440x960": 500
+      }
+    }
+  },
+  "test_used": {
+    "Crosswalk": {
+      "n": 57,
+      "n_hist": 57,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 80.0,
+      "desc_min": 80,
+      "sizes": {
+        "1440x960": 57
+      }
+    },
+    "CurbRamp": {
+      "n": 761,
+      "n_hist": 761,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 80.0,
+      "desc_min": 80,
+      "sizes": {
+        "1440x960": 761
+      }
+    },
+    "Obstacle": {
+      "n": 59,
+      "n_hist": 59,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 80.0,
+      "desc_min": 80,
+      "sizes": {
+        "1440x960": 59
+      }
+    },
+    "SurfaceProblem": {
+      "n": 609,
+      "n_hist": 609,
+      "n_too_few_descriptors": 0,
+      "desc_mean": 80.0,
+      "desc_min": 80,
+      "sizes": {
+        "1440x960": 609
+      }
+    }
+  },
+  "metrics": {
+    "per_class": [
+      {
+        "label": "Crosswalk",
+        "precision": 0.08446866485013624,
+        "recall": 0.543859649122807,
+        "support": 57,
+        "tp": 31,
+        "predicted": 367,
+        "abstain": 0
+      },
+      {
+        "label": "CurbRamp",
+        "precision": 0.6766666666666666,
+        "recall": 0.266754270696452,
+        "support": 761,
+        "tp": 203,
+        "predicted": 300,
+        "abstain": 0
+      },
+      {
+        "label": "Obstacle",
+        "precision": 0.055776892430278883,
+        "recall": 0.4745762711864407,
+        "support": 59,
+        "tp": 28,
+        "predicted": 502,
+        "abstain": 0
+      },
+      {
+        "label": "SurfaceProblem",
+        "precision": 0.45425867507886436,
+        "recall": 0.23645320197044334,
+        "support": 609,
+        "tp": 144,
+        "predicted": 317,
+        "abstain": 0
+      }
+    ],
+    "macro_recall": 0.38041084824403576,
+    "accuracy": 0.2732166890982503,
+    "n_test": 1486,
+    "n_correct": 406,
+    "n_abstain": 0,
+    "confusion": {
+      "Crosswalk": {
+        "Crosswalk": 31,
+        "CurbRamp": 6,
+        "Obstacle": 12,
+        "SurfaceProblem": 8
+      },
+      "CurbRamp": {
+        "Crosswalk": 218,
+        "CurbRamp": 203,
+        "Obstacle": 183,
+        "SurfaceProblem": 157
+      },
+      "Obstacle": {
+        "Crosswalk": 15,
+        "CurbRamp": 8,
+        "Obstacle": 28,
+        "SurfaceProblem": 8
+      },
+      "SurfaceProblem": {
+        "Crosswalk": 103,
+        "CurbRamp": 83,
+        "Obstacle": 279,
+        "SurfaceProblem": 144
+      }
+    },
+    "abstain": {
+      "Crosswalk": 0,
+      "CurbRamp": 0,
+      "Obstacle": 0,
+      "SurfaceProblem": 0
+    },
+    "majority": {
+      "label": "CurbRamp",
+      "train_count": 8324,
+      "n_correct": 761,
+      "n_test": 1486,
+      "accuracy": 0.5121130551816958
+    }
+  },
+  "recall_png": "/mnt/scratch/sift-tagger/out/sift-tagger-recall.png"
+}

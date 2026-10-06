@@ -56,4 +56,4 @@ Confusion, rows true and columns predicted, in the order Crosswalk, CurbRamp, Ob
 | Obstacle | 15 | 8 | 28 | 8 |
 | SurfaceProblem | 103 | 83 | 279 | 144 |
 
-Crosswalk recall is 31/57. Precision is 31/367: 218 curb ramps and 103 surface problems were called Crosswalk. Obstacle recall is 28/59 and precision is 28/502, including 279 surface problems and 183 curb ramps. CurbRamp precision is 203/300 and recall is 203/761. Accuracy 0.273 is below the CurbRamp majority baseline of 0.512. Recall chart: [sift-tagger-recall.png](/cursor/stores/bc-e83253f7-58cc-435d-aa0c-6257ce4fccf7/media/sift-tagger-recall.png).
+Crosswalk recall is 31/57. Precision is 31/367: 218 curb ramps and 103 surface problems were called Crosswalk. Obstacle recall is 28/59 and precision is 28/502, including 279 surface problems and 183 curb ramps. CurbRamp precision is 203/300 and recall is 203/761. Accuracy 0.273 is below the CurbRamp majority baseline of 0.512. The measured counts are in `reports/sift_tagger_baseline.json`. Recall chart: [sift-tagger-recall.png](/cursor/stores/bc-e83253f7-58cc-435d-aa0c-6257ce4fccf7/media/sift-tagger-recall.png).
