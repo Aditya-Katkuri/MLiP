@@ -1,7 +1,4 @@
----
-cursor:
-  subagentId: "bc-4b1e074d-a3c5-5129-bdc7-bf021ce5ccd5"
----
+
 
 # SIFT nearest-prototype baseline on the expert-validated tagger set
 
