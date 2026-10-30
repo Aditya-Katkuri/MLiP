@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """Make synthetic null images by removing the labelled object from Obstacle frames.
 
-Runs the reviewed pilot pipeline (notebooks/lama_obstacle_pilot.ipynb) unattended: Grounding DINO finds the tagged
-objects, the click point checks one is the labelled obstacle, SAM outlines them, LaMa fills them, and SDXL redraws the
-padded region to hide LaMa's blur and nearby shadows. No hand-marked shadow points. Settings match the pilot.
+Runs the pilot pipeline (notebooks/lama_obstacle_pilot.ipynb) unattended: Grounding DINO finds the tagged objects, only
+those at the click point are kept, SAM outlines them, LaMa fills the exact outline, and SDXL redraws a padded rectangle
+around it, so the mask's shape doesn't guide what SDXL paints. A frame is rejected if the mask misses the click, or if
+Grounding DINO finds an object inside the mask in the output. No hand-marked shadow points.
 
 Candidates are Obstacle PNG frames from the training splits only, Pittsburgh first, then other cities in a seeded
 shuffle. Frames tagged with something removal can't fix are skipped. Frames are read from the public Validated zip,
 and `--meta-dir` only supplies the split CSVs, so any sidewalk-data-2 or processed copy works.
 
-Writes <out>/nulls/<stem>_null.png, <out>/masks/<stem>_mask.png and <out>/log.csv. A rerun skips everything already
-in log.csv, so a lost runtime only costs the images since the last --hf-repo upload. HF_TOKEN must be set to upload.
+Writes under <out>: nulls/<stem>_null.png (accepted), rejected/<stem>_null.png (failed the output check),
+lama/<stem>_lama.png, masks/<stem>_mask.png and log.csv. The log's lama_objects and null_objects count objects found
+inside the mask after each stage, to show which stage a failure starts at. A rerun skips everything already in log.csv,
+so use a new --out for each --strength. A lost runtime only costs the images since the last --hf-repo upload, which
+goes to a folder named after --out. HF_TOKEN must be set to upload.
 
 setup:  pip uninstall -q -y torchao
         pip install -q diffusers==0.41.0 && pip install -q --no-deps simple-lama-inpainting
@@ -49,7 +53,9 @@ NON_REMOVABLE_TAGS = ["narrow", "vegetation", "height-difference", "stairs", "ga
 
 BOX_THRESHOLD = 0.30        # detection confidence
 TEXT_THRESHOLD = 0.25       # phrase-match confidence
-LABEL_MAX_DIST_FRAC = 0.10  # a box counts as the labeled obstacle if the click is inside or this close (frac of max(w, h))
+LABEL_MAX_DIST_FRAC = 0.02  # a box counts as the labeled obstacle if the click is inside or this close (frac of max(w, h))
+CLICK_TOLERANCE_PX = 30     # the mask must reach within this distance of the click, or the labeled obstacle was missed
+OBJECT_IN_MASK_FRAC = 0.5   # a box found in an output counts as inside the mask if this much of it is
 MAX_MASK_FRAC = 0.40        # skip images where the mask covers more than this
 MASK_DILATE_PX = 15         # grow the SAM mask so LaMa doesn't copy the object's edge
 
@@ -58,23 +64,26 @@ DIFFUSION_PROMPT = ("street-level photo, empty, uncracked pavement with nothing 
                     "seamless continuation of the surrounding scene")
 DIFFUSION_NEGATIVE = ("object, box, bag, trash can, debris, car, bicycle, pole, street light, lamp post, sign, "
                       "cone, barrier, fence, construction, person, shadow, text, blurry, smeared")
-DIFFUSION_STRENGTH = 0.7    # <1 keeps LaMa's layout and redraws texture on top of it
+DIFFUSION_STRENGTH = 0.7    # <1 keeps LaMa's layout and redraws texture on top of it; lower invents less
 DIFFUSION_STEPS = 30
 DIFFUSION_GUIDANCE = 6.0
-DIFFUSION_PAD_PX = 40       # SDXL redraws the LaMa mask grown by this much, to cover shadows and LaMa's edges
+DIFFUSION_PAD_PX = 40       # SDXL redraws the mask's bounding box grown by this much, to cover shadows and LaMa's edges
 DIFFUSION_CROP_PAD = 64     # context px around the region; the crop is inpainted at 1024x1024 and pasted back
 FEATHER_PX = 8              # blend weight ramps from 0 to 1 over this many px inside the region
 
+CHECK_PROMPT = ". ".join(p for phrases in REMOVABLE_TAGS.values() for p in phrases) + "."
+LOG_FIELDS = ["filename", "split", "tags", "status", "sec", "n_boxes", "n_kept", "mask_frac", "rect_frac",
+              "lama_objects", "null_objects"]
 
-def candidates(meta_dir, allow_narrow, seed):
+
+def candidates(meta_dir, seed):
     """Eligible frames, Pittsburgh first so a time limit still covers the target domain."""
-    blocked = [t for t in NON_REMOVABLE_TAGS if not (allow_narrow and t == "narrow")]
     parts = []
     for split in SPLITS:
         df = pd.read_csv(Path(meta_dir) / f"{split}.csv", low_memory=False)
         df = df[df["class"].eq("Obstacle") & df.filename.str.endswith(".png") & df.normalized_x.notna()]
         tags = df[list(REMOVABLE_TAGS) + NON_REMOVABLE_TAGS].fillna(0).astype(bool)
-        df = df[tags[list(REMOVABLE_TAGS)].any(axis=1) & ~tags[blocked].any(axis=1)].copy()
+        df = df[tags[list(REMOVABLE_TAGS)].any(axis=1) & ~tags[NON_REMOVABLE_TAGS].any(axis=1)].copy()
         df["tags"] = [[t for t in REMOVABLE_TAGS if tags.at[i, t]] for i in df.index]
         parts.append(df.sample(frac=1, random_state=seed))
     return pd.concat(parts, ignore_index=True)
@@ -85,15 +94,24 @@ def disk(r):
     return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1,) * 2)
 
 
+def bounding_rect(mask, pad):
+    """Filled rectangle around a uint8 mask, grown by pad and clipped to the image."""
+    ys, xs = np.nonzero(mask)
+    h, w = mask.shape
+    rect = np.zeros_like(mask)
+    rect[max(ys.min() - pad, 0):min(ys.max() + pad + 1, h), max(xs.min() - pad, 0):min(xs.max() + pad + 1, w)] = 255
+    return rect
+
+
 class Pipeline:
-    def __init__(self):
+    def __init__(self, strength):
         sys.modules["torchao"] = None  # diffusers needs a newer torchao than Colab's; nothing here uses it
         import torch
         from diffusers import AutoPipelineForInpainting
         from simple_lama_inpainting import SimpleLama
         from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor, SamModel, SamProcessor
 
-        self.torch, self.device = torch, "cuda"
+        self.torch, self.device, self.strength = torch, "cuda", strength
         self.processor = AutoProcessor.from_pretrained("IDEA-Research/grounding-dino-tiny")
         self.dino = AutoModelForZeroShotObjectDetection.from_pretrained("IDEA-Research/grounding-dino-tiny")
         self.dino = self.dino.to(self.device).eval()
@@ -124,12 +142,12 @@ class Pipeline:
         return masks[:, 0].numpy()
 
     def refine(self, img, mask, seed):
-        # Redraw the padded mask with SDXL, then blend it in only inside that region.
+        # Redraw the padded rectangle with SDXL, then blend it in only inside that region.
         import cv2
-        region = cv2.dilate(mask, disk(DIFFUSION_PAD_PX))
+        region = bounding_rect(mask, DIFFUSION_PAD_PX)
         gen = self.torch.Generator(self.device).manual_seed(seed)
         out = self.inpaint(prompt=DIFFUSION_PROMPT, negative_prompt=DIFFUSION_NEGATIVE, image=img,
-                           mask_image=Image.fromarray(region), strength=DIFFUSION_STRENGTH,
+                           mask_image=Image.fromarray(region), strength=self.strength,
                            num_inference_steps=DIFFUSION_STEPS, guidance_scale=DIFFUSION_GUIDANCE,
                            padding_mask_crop=DIFFUSION_CROP_PAD, generator=gen).images[0]
         if out.size != img.size:
@@ -139,32 +157,51 @@ class Pipeline:
         blended = np.array(img) * (1 - alpha) + np.array(out) * alpha
         return Image.fromarray(blended.round().astype(np.uint8))
 
+    def objects_in_mask(self, img, mask):
+        """How many boxes Grounding DINO finds that sit mostly inside the mask."""
+        n = 0
+        for x0, y0, x1, y1 in self.detect(img, CHECK_PROMPT).round().astype(int):
+            crop = mask[max(y0, 0):y1, max(x0, 0):x1]
+            n += crop.size > 0 and (crop > 0).mean() >= OBJECT_IN_MASK_FRAC
+        return n
+
     def remove(self, img, tags, point, seed):
-        """Returns (status, null, mask, record)."""
+        """Returns (status, stages, record). stages holds the mask, lama and null reached before stopping."""
         import cv2
         w, h = img.size
         text = ". ".join(p for t in tags for p in REMOVABLE_TAGS[t]) + "."
         boxes = self.detect(img, text)
-        dists = [np.hypot(max(b[0] - point[0], 0, point[0] - b[2]), max(b[1] - point[1], 0, point[1] - b[3]))
-                 for b in boxes]
-        if not len(boxes) or min(dists) / max(w, h) > LABEL_MAX_DIST_FRAC:
-            return "no_detection_at_label", None, None, dict(n_boxes=len(boxes))
-        obj = self.segment(img, boxes).any(axis=0)
+        dists = np.array([np.hypot(max(b[0] - point[0], 0, point[0] - b[2]), max(b[1] - point[1], 0, point[1] - b[3]))
+                          for b in boxes])
+        keep = dists / max(w, h) <= LABEL_MAX_DIST_FRAC if len(boxes) else np.zeros(0, bool)
+        rec = dict(n_boxes=len(boxes), n_kept=int(keep.sum()))
+        if not keep.any():
+            return "no_detection_at_label", {}, rec
+        obj = self.segment(img, boxes[keep]).any(axis=0)
         mask = cv2.dilate(obj.astype(np.uint8) * 255, disk(MASK_DILATE_PX))
-        rec = dict(n_boxes=len(boxes), mask_frac=float(mask.mean() / 255))
+        stages = dict(mask=mask)
+        rec.update(mask_frac=float((mask > 0).mean()),
+                   rect_frac=float((bounding_rect(mask, DIFFUSION_PAD_PX) > 0).mean()))
+        x, y = min(int(point[0]), w - 1), min(int(point[1]), h - 1)
+        if not cv2.dilate(mask, disk(CLICK_TOLERANCE_PX))[y, x]:
+            return "click_outside_mask", stages, rec
         if rec["mask_frac"] > MAX_MASK_FRAC:
-            return "mask_too_large", None, mask, rec
+            return "mask_too_large", stages, rec
         lama = self.lama(img, Image.fromarray(mask))
         if lama.size != img.size:  # LaMa may pad to a multiple of 8
             lama = lama.crop((0, 0, w, h))
-        return "ok", self.refine(lama, mask, seed), mask, rec
+        stages["lama"] = lama
+        rec["lama_objects"] = int(self.objects_in_mask(lama, mask))
+        stages["null"] = self.refine(lama, mask, seed)
+        rec["null_objects"] = int(self.objects_in_mask(stages["null"], mask))
+        return ("ok" if rec["null_objects"] == 0 else "object_in_output"), stages, rec
 
 
 def upload(repo, out):
     from huggingface_hub import HfApi
     try:
-        HfApi().upload_folder(repo_id=repo, folder_path=out, repo_type="dataset", path_in_repo="synthetic_nulls",
-                              commit_message="Add synthetic nulls")
+        HfApi().upload_folder(repo_id=repo, folder_path=out, repo_type="dataset", path_in_repo=out.name,
+                              commit_message=f"Add synthetic nulls: {out.name}")
     except Exception as e:  # a failed upload must not stop generation; the next one retries
         print(f"upload failed: {e}", flush=True)
 
@@ -177,17 +214,17 @@ def main():
     ap.add_argument("--upload-every", type=int, default=25)
     ap.add_argument("--max-minutes", type=float, default=float("inf"))
     ap.add_argument("--limit", type=int, help="stop after this many frames, e.g. 20 to check speed and quality")
-    ap.add_argument("--allow-narrow", action="store_true", help="also use frames tagged narrow")
+    ap.add_argument("--strength", type=float, default=DIFFUSION_STRENGTH, help="SDXL strength")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--dry-run", action="store_true", help="print the candidate counts and exit")
     a = ap.parse_args()
 
-    todo = candidates(a.meta_dir, a.allow_narrow, a.seed)
+    todo = candidates(a.meta_dir, a.seed)
     print(todo.groupby("split").size().to_string())
     if a.dry_run:
         return
-    (a.out / "nulls").mkdir(parents=True, exist_ok=True)
-    (a.out / "masks").mkdir(exist_ok=True)
+    for name in ["nulls", "rejected", "lama", "masks"]:
+        (a.out / name).mkdir(parents=True, exist_ok=True)
     log_path = a.out / "log.csv"
     if log_path.exists():
         todo = todo[~todo.filename.isin(pd.read_csv(log_path).filename)]
@@ -198,7 +235,7 @@ def main():
     from huggingface_hub import HfApi, HfFileSystem
     if a.hf_repo:
         HfApi().create_repo(a.hf_repo, repo_type="dataset", private=True, exist_ok=True)
-    pipe = Pipeline()
+    pipe = Pipeline(a.strength)
     t0, done, ok = time.perf_counter(), 0, 0
     with HfFileSystem().open(ZIP_PATH, "rb", block_size=4 * 2**20) as f, zipfile.ZipFile(f) as zf:
         for i, row in enumerate(todo.itertuples()):
@@ -208,14 +245,17 @@ def main():
             img = Image.open(io.BytesIO(zf.read(f"Obstacle/crops/{row.filename}"))).convert("RGB")
             point = (row.normalized_x * img.width, row.normalized_y * img.height)
             t1 = time.perf_counter()
-            status, null, mask, rec = pipe.remove(img, row.tags, point, a.seed + i)
+            status, stages, rec = pipe.remove(img, row.tags, point, a.seed + i)
             stem = Path(row.filename).stem
-            if status == "ok":
-                null.save(a.out / "nulls" / f"{stem}_null.png")
-                Image.fromarray(mask).save(a.out / "masks" / f"{stem}_mask.png")
-                ok += 1
+            if "mask" in stages:
+                Image.fromarray(stages["mask"]).save(a.out / "masks" / f"{stem}_mask.png")
+            if "lama" in stages:
+                stages["lama"].save(a.out / "lama" / f"{stem}_lama.png")
+            if "null" in stages:
+                stages["null"].save(a.out / ("nulls" if status == "ok" else "rejected") / f"{stem}_null.png")
+            ok += status == "ok"
             pd.DataFrame([dict(filename=row.filename, split=row.split, tags=",".join(row.tags), status=status,
-                               sec=time.perf_counter() - t1, **rec)]).to_csv(
+                               sec=time.perf_counter() - t1, **rec)], columns=LOG_FIELDS).to_csv(
                 log_path, mode="a", header=not log_path.exists(), index=False)
             done += 1
             if done % 10 == 0 or done == len(todo):
