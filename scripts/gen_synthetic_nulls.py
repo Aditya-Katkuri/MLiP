@@ -10,11 +10,14 @@ Candidates are Obstacle PNG frames from the training splits only, Pittsburgh fir
 shuffle. Frames tagged with something removal can't fix are skipped. Frames are read from the public Validated zip,
 and `--meta-dir` only supplies the split CSVs, so any sidewalk-data-2 or processed copy works.
 
-Writes under <out>: nulls/<stem>_null.png (accepted), rejected/<stem>_null.png (failed the output check),
+--strength and --guidance each take several values, and every pair runs on the same frames and loaded models. Each pair
+writes to its own folder, <out>_s<strength>_g<guidance>, referred to as <run> below.
+
+Writes under <run>: nulls/<stem>_null.png (accepted), rejected/<stem>_null.png (failed the output check),
 lama/<stem>_lama.png, masks/<stem>_mask.png and log.csv. The log's lama_objects and null_objects count objects found
-inside the mask after each stage, to show which stage a failure starts at. A rerun skips everything already in log.csv,
-so use a new --out for each --strength. A lost runtime only costs the images since the last --hf-repo upload, which
-goes to a folder named after --out. HF_TOKEN must be set to upload.
+inside the mask after each stage, to show which stage a failure starts at (lama_objects is blank with --skip-lama).
+A rerun skips everything already in log.csv, and a lost runtime only costs the images since the last --hf-repo upload,
+which goes to a folder named after <run>. HF_TOKEN must be set to upload.
 
 setup:  pip uninstall -q -y torchao
         pip install -q diffusers==0.41.0 && pip install -q --no-deps simple-lama-inpainting
@@ -22,6 +25,7 @@ usage:  python scripts/gen_synthetic_nulls.py --meta-dir DIR --out DIR [--hf-rep
         python scripts/gen_synthetic_nulls.py --meta-dir DIR --dry-run
 """
 import argparse, io, sys, time, zipfile
+from itertools import product
 from pathlib import Path
 
 import numpy as np, pandas as pd
@@ -76,14 +80,16 @@ LOG_FIELDS = ["filename", "split", "tags", "status", "sec", "n_boxes", "n_kept",
               "lama_objects", "null_objects"]
 
 
-def candidates(meta_dir, seed):
-    """Eligible frames, Pittsburgh first so a time limit still covers the target domain."""
+def candidates(meta_dir, seed, only_tags=(), exclude_tags=()):
     parts = []
     for split in SPLITS:
         df = pd.read_csv(Path(meta_dir) / f"{split}.csv", low_memory=False)
         df = df[df["class"].eq("Obstacle") & df.filename.str.endswith(".png") & df.normalized_x.notna()]
         tags = df[list(REMOVABLE_TAGS) + NON_REMOVABLE_TAGS].fillna(0).astype(bool)
-        df = df[tags[list(REMOVABLE_TAGS)].any(axis=1) & ~tags[NON_REMOVABLE_TAGS].any(axis=1)].copy()
+        keep = tags[list(REMOVABLE_TAGS)].any(axis=1) & ~tags[NON_REMOVABLE_TAGS + list(exclude_tags)].any(axis=1)
+        if only_tags:
+            keep &= tags[list(only_tags)].any(axis=1)
+        df = df[keep].copy()
         df["tags"] = [[t for t in REMOVABLE_TAGS if tags.at[i, t]] for i in df.index]
         parts.append(df.sample(frac=1, random_state=seed))
     return pd.concat(parts, ignore_index=True)
@@ -94,24 +100,26 @@ def disk(r):
     return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1,) * 2)
 
 
-def bounding_rect(mask, pad):
-    """Filled rectangle around a uint8 mask, grown by pad and clipped to the image."""
+def bounding_rect(mask, pad, pad_down=0):
+    """Filled rectangle around a uint8 mask, grown by pad, plus pad_down at the bottom, and clipped to the image."""
     ys, xs = np.nonzero(mask)
     h, w = mask.shape
     rect = np.zeros_like(mask)
-    rect[max(ys.min() - pad, 0):min(ys.max() + pad + 1, h), max(xs.min() - pad, 0):min(xs.max() + pad + 1, w)] = 255
+    rect[max(ys.min() - pad, 0):min(ys.max() + pad + pad_down + 1, h), max(xs.min() - pad, 0):min(xs.max() + pad + 1, w)] = 255
     return rect
 
 
 class Pipeline:
-    def __init__(self, strength):
+    def __init__(self, max_mask_frac=MAX_MASK_FRAC, skip_lama=False, pad_down=0):
         sys.modules["torchao"] = None  # diffusers needs a newer torchao than Colab's; nothing here uses it
         import torch
         from diffusers import AutoPipelineForInpainting
         from simple_lama_inpainting import SimpleLama
         from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor, SamModel, SamProcessor
 
-        self.torch, self.device, self.strength = torch, "cuda", strength
+        self.torch, self.device = torch, "cuda"
+        self.strength, self.guidance = DIFFUSION_STRENGTH, DIFFUSION_GUIDANCE
+        self.max_mask_frac, self.skip_lama, self.pad_down = max_mask_frac, skip_lama, pad_down
         self.processor = AutoProcessor.from_pretrained("IDEA-Research/grounding-dino-tiny")
         self.dino = AutoModelForZeroShotObjectDetection.from_pretrained("IDEA-Research/grounding-dino-tiny")
         self.dino = self.dino.to(self.device).eval()
@@ -144,11 +152,11 @@ class Pipeline:
     def refine(self, img, mask, seed):
         # Redraw the padded rectangle with SDXL, then blend it in only inside that region.
         import cv2
-        region = bounding_rect(mask, DIFFUSION_PAD_PX)
+        region = bounding_rect(mask, DIFFUSION_PAD_PX, self.pad_down)
         gen = self.torch.Generator(self.device).manual_seed(seed)
         out = self.inpaint(prompt=DIFFUSION_PROMPT, negative_prompt=DIFFUSION_NEGATIVE, image=img,
                            mask_image=Image.fromarray(region), strength=self.strength,
-                           num_inference_steps=DIFFUSION_STEPS, guidance_scale=DIFFUSION_GUIDANCE,
+                           num_inference_steps=DIFFUSION_STEPS, guidance_scale=self.guidance,
                            padding_mask_crop=DIFFUSION_CROP_PAD, generator=gen).images[0]
         if out.size != img.size:
             out = out.resize(img.size, Image.LANCZOS)
@@ -181,18 +189,21 @@ class Pipeline:
         mask = cv2.dilate(obj.astype(np.uint8) * 255, disk(MASK_DILATE_PX))
         stages = dict(mask=mask)
         rec.update(mask_frac=float((mask > 0).mean()),
-                   rect_frac=float((bounding_rect(mask, DIFFUSION_PAD_PX) > 0).mean()))
+                   rect_frac=float((bounding_rect(mask, DIFFUSION_PAD_PX, self.pad_down) > 0).mean()))
         x, y = min(int(point[0]), w - 1), min(int(point[1]), h - 1)
         if not cv2.dilate(mask, disk(CLICK_TOLERANCE_PX))[y, x]:
             return "click_outside_mask", stages, rec
-        if rec["mask_frac"] > MAX_MASK_FRAC:
+        if rec["mask_frac"] > self.max_mask_frac:
             return "mask_too_large", stages, rec
-        lama = self.lama(img, Image.fromarray(mask))
-        if lama.size != img.size:  # LaMa may pad to a multiple of 8
-            lama = lama.crop((0, 0, w, h))
-        stages["lama"] = lama
-        rec["lama_objects"] = int(self.objects_in_mask(lama, mask))
-        stages["null"] = self.refine(lama, mask, seed)
+        if self.skip_lama:
+            stages["null"] = self.refine(img, mask, seed)
+        else:
+            lama = self.lama(img, Image.fromarray(mask))
+            if lama.size != img.size:  # LaMa may pad to a multiple of 8
+                lama = lama.crop((0, 0, w, h))
+            stages["lama"] = lama
+            rec["lama_objects"] = int(self.objects_in_mask(lama, mask))
+            stages["null"] = self.refine(lama, mask, seed)
         rec["null_objects"] = int(self.objects_in_mask(stages["null"], mask))
         return ("ok" if rec["null_objects"] == 0 else "object_in_output"), stages, rec
 
@@ -206,6 +217,44 @@ def upload(repo, out):
         print(f"upload failed: {e}", flush=True)
 
 
+def run(pipe, todo, zf, out, a):
+    """Process every frame in todo not yet in out/log.csv with the pipeline's current settings."""
+    for name in ["nulls", "rejected", "lama", "masks"]:
+        (out / name).mkdir(parents=True, exist_ok=True)
+    log_path = out / "log.csv"
+    if log_path.exists():
+        todo = todo[~todo.filename.isin(pd.read_csv(log_path).filename)]
+    print(f"{out.name}: {len(todo)} frames to process", flush=True)
+    t0, done, ok = time.perf_counter(), 0, 0
+    for i, row in enumerate(todo.itertuples()):
+        if (time.perf_counter() - t0) / 60 > a.max_minutes:
+            print("time limit reached", flush=True)
+            break
+        img = Image.open(io.BytesIO(zf.read(f"Obstacle/crops/{row.filename}"))).convert("RGB")
+        point = (row.normalized_x * img.width, row.normalized_y * img.height)
+        t1 = time.perf_counter()
+        status, stages, rec = pipe.remove(img, row.tags, point, a.seed + i)
+        stem = Path(row.filename).stem
+        if "mask" in stages:
+            Image.fromarray(stages["mask"]).save(out / "masks" / f"{stem}_mask.png")
+        if "lama" in stages:
+            stages["lama"].save(out / "lama" / f"{stem}_lama.png")
+        if "null" in stages:
+            stages["null"].save(out / ("nulls" if status == "ok" else "rejected") / f"{stem}_null.png")
+        ok += status == "ok"
+        pd.DataFrame([dict(filename=row.filename, split=row.split, tags=",".join(row.tags), status=status,
+                           sec=time.perf_counter() - t1, **rec)], columns=LOG_FIELDS).to_csv(
+            log_path, mode="a", header=not log_path.exists(), index=False)
+        done += 1
+        if done % 10 == 0 or done == len(todo):
+            print(f"{done}/{len(todo)}, {ok} ok, {(time.perf_counter() - t0) / done:.1f} s/frame", flush=True)
+        if a.hf_repo and done % a.upload_every == 0:
+            upload(a.hf_repo, out)
+    if a.hf_repo:
+        upload(a.hf_repo, out)
+    print(f"{done} frames, {ok} nulls in {(time.perf_counter() - t0) / 60:.1f} min -> {out}", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--meta-dir", type=Path, required=True)
@@ -214,57 +263,36 @@ def main():
     ap.add_argument("--upload-every", type=int, default=25)
     ap.add_argument("--max-minutes", type=float, default=float("inf"))
     ap.add_argument("--limit", type=int, help="stop after this many frames, e.g. 20 to check speed and quality")
-    ap.add_argument("--strength", type=float, default=DIFFUSION_STRENGTH, help="SDXL strength")
+    ap.add_argument("--strength", type=float, nargs="+", default=[DIFFUSION_STRENGTH], help="SDXL strengths to sweep")
+    ap.add_argument("--guidance", type=float, nargs="+", default=[DIFFUSION_GUIDANCE],
+                    help="SDXL guidance scales to sweep")
+    ap.add_argument("--max-mask-frac", type=float, default=MAX_MASK_FRAC, help="reject larger masks")
+    ap.add_argument("--only-tags", nargs="*", default=[], help="keep only frames with one of these tags")
+    ap.add_argument("--exclude-tags", nargs="*", default=[], help="drop frames with any of these tags")
+    ap.add_argument("--skip-lama", action="store_true", help="inpaint the original directly with SDXL")
+    ap.add_argument("--pad-down", type=int, default=0, help="extend the SDXL rectangle down by this many px")
+    ap.add_argument("--zip-file", type=Path, help="local copy of Obstacle.zip; faster than reading it remotely")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--dry-run", action="store_true", help="print the candidate counts and exit")
     a = ap.parse_args()
 
-    todo = candidates(a.meta_dir, a.seed)
+    todo = candidates(a.meta_dir, a.seed, a.only_tags, a.exclude_tags)
     print(todo.groupby("split").size().to_string())
     if a.dry_run:
         return
-    for name in ["nulls", "rejected", "lama", "masks"]:
-        (a.out / name).mkdir(parents=True, exist_ok=True)
-    log_path = a.out / "log.csv"
-    if log_path.exists():
-        todo = todo[~todo.filename.isin(pd.read_csv(log_path).filename)]
     if a.limit:
         todo = todo.head(a.limit)
-    print(f"{len(todo)} frames to process", flush=True)
 
     from huggingface_hub import HfApi, HfFileSystem
     if a.hf_repo:
         HfApi().create_repo(a.hf_repo, repo_type="dataset", private=True, exist_ok=True)
-    pipe = Pipeline(a.strength)
-    t0, done, ok = time.perf_counter(), 0, 0
-    with HfFileSystem().open(ZIP_PATH, "rb", block_size=4 * 2**20) as f, zipfile.ZipFile(f) as zf:
-        for i, row in enumerate(todo.itertuples()):
-            if (time.perf_counter() - t0) / 60 > a.max_minutes:
-                print("time limit reached", flush=True)
-                break
-            img = Image.open(io.BytesIO(zf.read(f"Obstacle/crops/{row.filename}"))).convert("RGB")
-            point = (row.normalized_x * img.width, row.normalized_y * img.height)
-            t1 = time.perf_counter()
-            status, stages, rec = pipe.remove(img, row.tags, point, a.seed + i)
-            stem = Path(row.filename).stem
-            if "mask" in stages:
-                Image.fromarray(stages["mask"]).save(a.out / "masks" / f"{stem}_mask.png")
-            if "lama" in stages:
-                stages["lama"].save(a.out / "lama" / f"{stem}_lama.png")
-            if "null" in stages:
-                stages["null"].save(a.out / ("nulls" if status == "ok" else "rejected") / f"{stem}_null.png")
-            ok += status == "ok"
-            pd.DataFrame([dict(filename=row.filename, split=row.split, tags=",".join(row.tags), status=status,
-                               sec=time.perf_counter() - t1, **rec)], columns=LOG_FIELDS).to_csv(
-                log_path, mode="a", header=not log_path.exists(), index=False)
-            done += 1
-            if done % 10 == 0 or done == len(todo):
-                print(f"{done}/{len(todo)}, {ok} ok, {(time.perf_counter() - t0) / done:.1f} s/frame", flush=True)
-            if a.hf_repo and done % a.upload_every == 0:
-                upload(a.hf_repo, a.out)
-    if a.hf_repo:
-        upload(a.hf_repo, a.out)
-    print(f"{done} frames, {ok} nulls in {(time.perf_counter() - t0) / 60:.1f} min -> {a.out}")
+    pipe = Pipeline(a.max_mask_frac, a.skip_lama, a.pad_down)
+    source = open(a.zip_file, "rb") if a.zip_file else HfFileSystem().open(ZIP_PATH, "rb", block_size=4 * 2**20)
+    with source as f, zipfile.ZipFile(f) as zf:
+        for strength, guidance in product(a.strength, a.guidance):
+            pipe.strength, pipe.guidance = strength, guidance
+            out = a.out.with_name(f"{a.out.name}_s{strength}_g{guidance}")
+            run(pipe, todo, zf, out, a)
 
 
 if __name__ == "__main__":
