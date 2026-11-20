@@ -1,0 +1,8 @@
+{
+  "other-cities-train.csv": "dc88d9a1fd7683af2f6d551922904035b871577a0b9da79dcc797b79fd5719d5",
+  "pitt-train.csv": "6fdc86fffcf59152187011a2dd55d5594e63f17ac7abb01529fdf4b79dc63082",
+  "pitt-val.csv": "32bbce7479f2f366aed2f008be127d7ba4c30fd35aa91feb5e5f704f090319bc",
+  "pitt-test.csv": "bff64ae48ef512c0e722cf96cd77f06090411386ef0217242d39740d7600388a",
+  "label_schema.json": "b429abdd786bc6c6f191b5fec0d0104171f2722f03ce819ea71f53bdeab911db",
+  "COMPLETE.json": "40a4b52bf4b07084e5fcb04d0e8f3b712cc7cef282861603a0d0ee58c753b827"
+}

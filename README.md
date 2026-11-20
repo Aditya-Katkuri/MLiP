@@ -43,6 +43,12 @@ to `3.10` — that is upstream's tested config.
 
 Dataset layout, class labels, and file provenance: [Sidewalk data](docs/sidewalk-data/README.md).
 
+Latest work: [dataset 3 and tag-based labels](docs/sidewalk-data-3/README.md),
+[DINO training and model selection](notebooks/sidewalk_data_3_support/README.md),
+[pilot ranking and reviewer evaluation](docs/sidewalk-pilot.md), and
+[manual class review](docs/data-review.md). Historical five-class experiments are
+documented in the [baseline workflow index](docs/baseline-workflows.md).
+
 | Thing | Where |
 |---|---|
 | Code, configs, notebooks | this repo |

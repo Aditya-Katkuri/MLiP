@@ -1,0 +1,141 @@
+{
+  "rule_version": "sidewalk-data-3-tag-groups-v1",
+  "binary_labels": {
+    "non_hazard": 0,
+    "hazard": 1
+  },
+  "group_order": [
+    "surface_and_level_problems",
+    "restricted_passage",
+    "missing_tactile_warning",
+    "ramp_points_into_traffic"
+  ],
+  "group_columns": [
+    "group_surface_and_level_problems",
+    "group_restricted_passage",
+    "group_missing_tactile_warning",
+    "group_ramp_points_into_traffic"
+  ],
+  "groups": {
+    "surface_and_level_problems": {
+      "display_name": "Surface and level problems",
+      "positive_tags": [
+        "broken-surface",
+        "bumpy",
+        "uneven-surface",
+        "not-level-with-street",
+        "pooled-water",
+        "steep",
+        "surface-problem",
+        "height-difference",
+        "stairs",
+        "uneven-slanted",
+        "uncovered-manhole",
+        "very-broken"
+      ]
+    },
+    "restricted_passage": {
+      "display_name": "Restricted passage / maneuvering space",
+      "positive_tags": [
+        "narrow",
+        "not-enough-landing-space",
+        "narrow-sidewalk"
+      ]
+    },
+    "missing_tactile_warning": {
+      "display_name": "Missing tactile warning",
+      "positive_tags": [
+        "missing-tactile-warning"
+      ]
+    },
+    "ramp_points_into_traffic": {
+      "display_name": "Ramp points into traffic",
+      "positive_tags": [
+        "points-into-traffic"
+      ]
+    }
+  },
+  "all_tags": [
+    "brick-cobblestone",
+    "broken-surface",
+    "bumpy",
+    "level-with-sidewalk",
+    "no-pedestrian-priority",
+    "paint-fading",
+    "rail-tram-track",
+    "too-close-to-traffic",
+    "uneven-surface",
+    "very-long-crossing",
+    "missing-tactile-warning",
+    "narrow",
+    "not-enough-landing-space",
+    "not-level-with-street",
+    "parallel-lines",
+    "points-into-traffic",
+    "pooled-water",
+    "steep",
+    "surface-problem",
+    "tactile-warning",
+    "construction",
+    "fire-hydrant",
+    "garage-entrance",
+    "height-difference",
+    "litter-garbage",
+    "outdoor-dining-area",
+    "parked-bike",
+    "parked-car",
+    "parked-scooter-motorcycle",
+    "pole",
+    "sign",
+    "stairs",
+    "street-vendor",
+    "trash-recycling-can",
+    "tree",
+    "vegetation",
+    "mailbox",
+    "seating",
+    "uneven-slanted",
+    "cracks",
+    "grass",
+    "narrow-sidewalk",
+    "sand-gravel",
+    "uncovered-manhole",
+    "utility-panel",
+    "very-broken"
+  ],
+  "non_hazard_tags": [
+    "brick-cobblestone",
+    "level-with-sidewalk",
+    "no-pedestrian-priority",
+    "paint-fading",
+    "rail-tram-track",
+    "too-close-to-traffic",
+    "very-long-crossing",
+    "parallel-lines",
+    "tactile-warning",
+    "construction",
+    "fire-hydrant",
+    "garage-entrance",
+    "litter-garbage",
+    "outdoor-dining-area",
+    "parked-bike",
+    "parked-car",
+    "parked-scooter-motorcycle",
+    "pole",
+    "sign",
+    "street-vendor",
+    "trash-recycling-can",
+    "tree",
+    "vegetation",
+    "mailbox",
+    "seating",
+    "cracks",
+    "grass",
+    "sand-gravel",
+    "utility-panel"
+  ],
+  "multi_label": true,
+  "manual_collection_label": "non_hazard",
+  "no_positive_hazard_tags_label": "non_hazard",
+  "no_tag_annotations_label": "non_hazard"
+}
