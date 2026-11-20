@@ -1,0 +1,12 @@
+[
+  {
+    "archive": "pitt_inf_AB.zip",
+    "sha256": "695b7a8317f6054bc3839c4cbb9fbee3908aecdba3e8ede0b3e23379afc03178",
+    "bytes": 5171639
+  },
+  {
+    "archive": "pitt_inf_CD.zip",
+    "sha256": "510d66a2c539c16ca3f44b4f5a8d67d51d0ee0cb7a8ac3db0d965f13dab65018",
+    "bytes": 5507309
+  }
+]
