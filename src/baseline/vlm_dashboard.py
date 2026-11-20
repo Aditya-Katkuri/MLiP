@@ -615,7 +615,7 @@ def main():
     parser.add_argument("--explorer-dir", type=Path, default=DEFAULT_EXPLORER)
     parser.add_argument("--clip-dir", type=Path, default=DEFAULT_CLIP)
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=8766)
     args = parser.parse_args()
     store = Store(args.explorer_dir, args.clip_dir)
     store.refresh()

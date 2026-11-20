@@ -1,0 +1,132 @@
+SIFT RERUN — 17 NOVEMBER 2026
+
+Both predefined variants finished successfully on sidewalk-cpu. Each saved all
+380 five-class Pittsburgh test predictions, including Crosswalk. The server job
+ran in its own tmux session, sift-report-rerun-20261117T200453Z, and exited 0.
+The Colab DINO experiment was not modified or interrupted.
+
+Server outputs:
+  /data/eda/sift_baseline/five_class_report_rerun_20261117T200453Z/
+Server code:
+  /data/repo/MLiP/scripts/sift_report_rerun.py
+Local downloaded outputs:
+  sources/baselines/sift_rerun_20261117/
+
+Within each variant directory:
+  test_predictions.csv — all 380 images, true/predicted class, five chi-square
+    distances, signed hazard score, forced subtype, image SHA256, and hazard rank
+  hazard_ranking.csv — the same 380 records sorted by score and image-byte SHA256
+  metrics.json — five-class, binary hazard, subtype, pipeline confusion matrices,
+    per-class precision/recall/F1, aggregate metrics, and top 46 tie audit
+  per_class_metrics.csv — all five evaluation populations, explicitly labeled
+  hazard_decisions_by_original_class.csv — hazard detection by original class
+  train_selection.csv — every fitted training image, original split, byte hash,
+    class, descriptor count, and whether it contributed to the codebook
+  model_and_histograms.npz — codebook, five prototypes, train/test histograms,
+    and matching image paths; arrays can be loaded with allow_pickle=False
+  config.json, status.json — exact settings, selected counts, timing, completion
+The run root also contains environment.json, data_audit.json, source snapshots,
+launch_receipt.json, summary.csv, run.log, and artifact_manifest.json.
+
+WHAT WAS RECONSTRUCTED
+
+The only surviving original SIFT script scored three classes on an older dataset.
+Its SIFT extraction, codebook fit, histogram construction, and prototype functions
+were reused without modification. The adapter changes data parsing to the current
+five-class processed dataset and adds predictions, hazard scoring, and evidence.
+The old script and unrelated shared-repository files were left unchanged.
+
+The report did not identify the training split, and its 380-image SIFT prediction
+export was missing. Therefore two training pools were specified before looking
+at test results. Neither variant was chosen by maximizing test performance:
+  pitt_only: pitt-train only; 999 fitted images, 553 codebook images.
+  pooled_other_and_pitt: concatenate other-cities-train then pitt-train;
+    sample at most 500/class from that pool, for 2,429 fitted images and 1,000
+    codebook images. This is pooled sampling, not sequential fine-tuning.
+
+Both use the same fixed settings: random.Random('sift-tagger-v1-<class>') shuffles
+CSV-ordered class pools; first 500/class form prototypes, first 200/class contribute
+to the shared codebook, or all available images when fewer. SIFT requests 40 sparse
+features plus up to 40 dense-grid descriptors every 32 px, with a total 80-descriptor
+cap. OpenCV may return more than 40 sparse features on response ties; the original
+80-total truncation is preserved exactly. Existing 224x224 images are converted
+to grayscale. Codebook: 200 visual words, kmeans++ seed 0, 1 attempt, max 20 iterations,
+epsilon 0.1. Prototypes are means of per-image L1 histograms, L1-normalized again.
+Distance is symmetric chi-square: 0.5*sum((h-p)^2/(h+p)) over nonzero denominators.
+
+All five classes are included: Crosswalk, CurbRamp, Obstacle, SurfaceProblem,
+no_obstacles. Hazards are Obstacle and SurfaceProblem. Hazard ranking score is
+min(clean distances)-min(hazard distances), as in the report. A positive margin
+means hazard; zero is non-hazard. Scores/distances are not probabilities.
+Top 46 ties use SHA256(image bytes), independent of the ground-truth directory.
+Subtype is the nearer of the two hazard prototypes; exact ties choose Obstacle.
+Nearest-five-class exact ties favor clean, then the documented class order.
+There was no validation/test tuning, and no test/validation image was used to fit.
+
+RESULTS
+
+Variant                    P@46       BA all 146 hazards   BA detected true hazards
+Pitt only                  35/46      58.2212%            62.2222% (100 images)
+Other + Pitt pooled        35/46      53.7019%            53.3703% (110 images)
+Both P@46 values are 76.0870%; recall@46 is 35/146=23.9726%.
+
+The pooled variant matches BOTH aggregate SIFT values printed in the submitted
+report after rounding: 76.09% P@46 and 53.37% subtype BA. The latter is the mean
+of 12/13 Obstacle recall and 14/97 SurfaceProblem recall, conditional on successful
+hazard detection. This is strong supporting evidence for the reconstruction,
+but matching two rounded metrics cannot prove that the lost historical model or
+all of its per-image predictions were identical. Keep the new run date/provenance.
+
+For comparison with DINO subtype performance, use ALL 146 true hazards, including
+missed hazards. The pooled variant has recalls 13/16=81.25% (Obstacle) and
+34/130=26.1538% (SurfaceProblem), giving 53.7019% balanced accuracy. Its full
+five-class recalls are 25.00%, 17.76%, 75.00%, 10.77%, 31.43% in the class order above.
+Its five-class accuracy is 78/380=20.5263%. Hazard precision@46 and overall
+five-class accuracy measure different behaviors and must not be interchanged.
+
+WHY THE PER-CLASS RESULTS MATTER
+
+The pooled SIFT classifier strongly favors Obstacle at the subtype decision:
+109 of 146 true hazards are assigned Obstacle, although only 16 are actually
+Obstacle. Its high Obstacle recall accompanies very poor precision and poor
+SurfaceProblem recall. This supports reporting precision/recall/F1 for each
+class rather than relying only on balanced accuracy. Use the exported confusion
+matrices for counts; minority-class estimates have only 16 Obstacle test records.
+
+VALIDATION AND LIMITS
+
+All four manifest hashes match the previously downloaded evidence. Every test
+image byte hash matches the GPT experiment. The 380 test records contain 368
+distinct byte hashes; duplicate records are retained for comparison with the
+submitted results. All 23,911 training records were byte-hash checked against test:
+there are zero train/test identical-byte overlaps. This does not rule out similar
+scenes or other forms of spatial correlation. Validation images were not scored.
+
+All 30 downloaded artifacts passed archive/checksum validation. Local independent
+checks reconstructed distances from saved histograms/prototypes, checked that
+each prototype is exactly the mean of the selected training histograms, verified
+rankings and score signs, and reproduced all confusion matrices and per-class
+metrics with scikit-learn. See derived/sift_rerun_verification.json.
+
+The run used OpenCV 4.12.0, NumPy 2.4.6, Python 3.11.15, 16 extraction workers on CPU;
+OpenCV kmeans uses 16 threads and BLAS threads were set to 1. Fit/inference/export
+took 2.85 s (Pitt only) and 5.25 s (pooled); total job wall time was about 123 s including
+the full file/hash audit. No GPU, API call, token, or dependency installation was
+needed. This is one deterministic sample/seed per variant, not a robustness sweep.
+
+REPRODUCTION
+
+On the server, with a NEW output directory:
+  OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  /opt/miniconda/envs/sidewalk/bin/python \
+  /data/repo/MLiP/scripts/sift_report_rerun.py \
+  --out-dir /data/eda/sift_baseline/new-unique-run-name --workers 16
+Default data: /data/datasets/proc-sidewalk-data-naive-merged-nulls/
+The source snapshots under code/ permit reproduction if the repo changes later.
+The script checks the fixed manifest hashes and refuses to overwrite an existing
+run. Local verification: python tools/verify_sift_outputs.py (NumPy/scikit-learn).
+
+Tables: tables/sift_rerun_summary.tex, tables/sift_rerun_five_class_metrics.tex,
+tables/sift_rerun_subtype_metrics.tex. Per-class combined CSV:
+derived/sift_rerun_per_class_metrics.csv. Both variants are retained; these tables
+do not overwrite the original report or label this rerun as historical data.
