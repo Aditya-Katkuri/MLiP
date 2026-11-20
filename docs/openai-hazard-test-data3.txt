@@ -1,0 +1,42 @@
+Frozen validation-selected VLM hazard method: test evaluation
+
+Apply only the selected evidence_checklist prompt to all 380 pitt-test images.
+The selection comes from hazard_validation_revision_20261120T211054Z, with
+configuration SHA-256 963bd410b0cb2f389a07df9463782d68b731d22d9055a18a61ffd29f87814381.
+Model: gpt-6.1-sol; reasoning: low; image detail: high; store=False.
+Input: exact existing 224x224 RGB PNG bytes; no crop, resize, tags, labels,
+annotation coordinates or filenames are passed to the API.
+
+The prompt and output schema are loaded unchanged from that frozen configuration.
+Hazard threshold remains 0.30; there is no test threshold sweep, calibration,
+prompt revision, or model selection. Rank p_hazard descending and sample_id
+ascending for ties. Report hazard precision@top10% (38 images), precision@46,
+fixed-threshold balanced accuracy, precision/recall/F1, specificity and ROC AUC.
+Report cutoff-tie sensitivity without changing the predeclared tie rule.
+
+Reuse the original VLM's saved four conditional subtype probabilities and its
+original validation-selected thresholds [0.5,0.5,0.5,0.3]. No new subtype API
+requests are made. The primary subtype metric uses all 174 true hazards and
+therefore remains unchanged. Gated whole-pipeline metrics are recomputed with
+the new hazard predictions and are saved separately from that primary metric.
+Checklist observation statuses are supporting output, not subtype predictions.
+
+Run in server tmux with six concurrent independent requests. OPENAI_API_KEY
+comes from the environment and is not saved. Durable response journaling,
+image/config/code hashes, strict output validation, file locking and resume
+preserve completed successful requests. The API model/settings and all saved
+raw response texts are checked. Original results and subtype data are preserved.
+
+The new runner imports frozen evaluation helpers but never calls their threshold
+selection functions. An offline fake-API run/resume test verifies this, verifies
+380 successful calls are not repeated on resume, and checks subtype preservation.
+
+Artifacts: config.json; selected_hazard_model.json; input manifest and original
+scores; prompt/schema; source snapshots; raw predictions.jsonl; incremental
+pitt-test_hazard_predictions.csv; merged pitt-test_predictions.csv; rankings and
+top38/top46 files; per-class/group and gated pipeline metrics; test_comparison.csv;
+results.json; final_verification.json; status.json and logs.
+
+This evaluation follows development that included a historical test-error audit;
+it is a fixed application of the validation-selected revision to the existing
+test set, not a claim that the historical test set has never been inspected.

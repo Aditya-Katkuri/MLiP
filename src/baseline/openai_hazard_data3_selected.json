@@ -1,0 +1,161 @@
+{
+  "candidate": "evidence_checklist",
+  "hazard_threshold": 0.3,
+  "metrics": {
+    "n": 382,
+    "positive_count": 157,
+    "ranking": {
+      "39": {
+        "k": 39,
+        "hits": 22,
+        "precision": 0.5641025641025641,
+        "cutoff": 0.9,
+        "tied_images": 5,
+        "selected_tied_images": 1,
+        "precision_min_over_ties": 0.5384615384615384,
+        "precision_max_over_ties": 0.5641025641025641
+      },
+      "46": {
+        "k": 46,
+        "hits": 24,
+        "precision": 0.5217391304347826,
+        "cutoff": 0.89,
+        "tied_images": 8,
+        "selected_tied_images": 3,
+        "precision_min_over_ties": 0.5217391304347826,
+        "precision_max_over_ties": 0.5869565217391305
+      }
+    },
+    "selected_binary": {
+      "threshold": 0.3,
+      "tp": 107,
+      "fn": 50,
+      "tn": 134,
+      "fp": 91,
+      "recall": 0.6815286624203821,
+      "specificity": 0.5955555555555555,
+      "precision": 0.5404040404040404,
+      "balanced_accuracy": 0.6385421089879688,
+      "accuracy": 0.6308900523560209
+    },
+    "roc_auc": 0.6561641896673743
+  },
+  "selection_split": "pitt-val",
+  "test_used": false,
+  "subtype_model": "unchanged original VLM outputs",
+  "note": "Development/selection scores on validation; no independent test claim. Original remains selected if revisions do not improve the fixed objective.",
+  "prompt": "You are assessing accessibility problems in a street-view photograph.\nPredict whether the PUBLIC PEDESTRIAN WALKING ROUTE visible in the image contains\nat least one of the four study-defined problems below. This is an image-only\nassessment, not a general impression of how old, untidy, urban, or unsafe the\nscene looks. The route includes the public sidewalk and pedestrian curb ramps\nor crossing transitions. Inspect the route before assigning the confidence.\n\nSpatial scope:\n- Evaluate the usable walking surface and clearance along that public route.\n- Do not count stairs to a private house, a porch, a yard, a retaining wall,\n  or a sloping garage driveway outside the walking route. Stairs that actually\n  form part of the public walking route DO count.\n- A road crack, pothole, road slope, or parked vehicle matters only if it affects\n  the pedestrian route or its crossing transition. Camera perspective, a tilted\n  horizon, shadows and normal curb height are not evidence of a walking defect.\n\nThe four qualifying groups are:\n1. Surface and level problems: a visibly broken, bumpy or uneven walking surface,\n   displaced/lifted slabs, an abrupt level change on the route, a curb-ramp lip\n   that is not flush with the street, pooled water on the route, a clearly steep\n   or slanted walking surface, stairs on the public route, or an\n   uncovered manhole/open hole on the route. Ordinary paving joints, cosmetic\n   cracks, patch color, grass between otherwise usable slabs and brick or\n   cobblestone texture alone are NOT sufficient. There must be visible evidence\n   of the qualifying defect, not a guess that a crack might hide one.\n2. Restricted passage: the remaining usable sidewalk, curb ramp, or landing is\n   visibly narrow or has insufficient turning/landing space. Judge the clear\n   passage, not merely whether a pole, tree, bush, parked car or object appears\n   anywhere in the scene. Objects next to an adequately open route do not count.\n   Do not invent measurements from perspective. When width is ambiguous, retain\n   that uncertainty instead of assuming a restriction.\n3. Missing tactile warning: an identifiable pedestrian curb ramp or pedestrian\n   crossing transition lacks the expected detectable warning surface (typically\n   a field of raised truncated domes). A colored patch alone is not proof either\n   way. Ordinary mid-block pavement, a driveway/garage entrance, a view without\n   a visible pedestrian transition, or an obscured transition does not establish\n   a missing warning. Only assess absence where the relevant surface is visible.\n4. Ramp points into traffic: the direction of travel down a pedestrian curb ramp\n   would lead into the vehicle travel area instead of aligning with the intended\n   pedestrian crossing. Consider the ramp direction and crossing geometry\n   together. A diagonal corner ramp can qualify when it aims into the junction\n   rather than along a crossing. Simply meeting the street, lacking painted\n   crossing lines, or having traffic nearby is not sufficient evidence.\n\nThe four groups may overlap. Hazard means at least one is present.\nNon-hazard means none is established by the visible pedestrian-route evidence.\nSome details are difficult to see in this low-resolution image; uncertainty is\nnot itself evidence of a hazard. Do not confidently invent a defect when its\npresence or location on the route cannot be established.\n\nExact study tag mapping (interpret using the definitions above):\nsurface_and_level_problems: broken-surface, bumpy, uneven-surface, not-level-with-street, pooled-water, steep, surface-problem, height-difference, stairs, uneven-slanted, uncovered-manhole, very-broken.\nrestricted_passage: narrow, not-enough-landing-space, narrow-sidewalk.\nmissing_tactile_warning: missing-tactile-warning.\nramp_points_into_traffic: points-into-traffic.\nThese tag concepts alone are non-hazard: brick-cobblestone, level-with-sidewalk, no-pedestrian-priority, paint-fading, rail-tram-track, too-close-to-traffic, very-long-crossing, parallel-lines, tactile-warning, construction, fire-hydrant, garage-entrance, litter-garbage, outdoor-dining-area, parked-bike, parked-car, parked-scooter-motorcycle, pole, sign, street-vendor, trash-recycling-can, tree, vegetation, mailbox, seating, cracks, grass, sand-gravel, utility-panel.\n\nCheck every group separately before producing the hazard score. For each group\nreturn an observation with status present, absent, uncertain, or not_assessable,\nand a short description of visible evidence and its location (at most 160\ncharacters). \"Absent\" requires that the relevant route feature is visible and\ndoes not have the defect. Use \"not_assessable\" when the required feature or\ndetail cannot be seen. A feature outside the public route cannot establish\npresence. Then combine the four observations into p_hazard. Do not convert an\nuncertain or not-assessable entry into a confirmed hazard merely to be cautious.\n\nReturn the requested JSON only. p_hazard is a confidence score between 0 and 1\nfor the presence of at least one qualifying hazard in this image. It is not a\nseverity or urgency score. A value near 1 requires clear visible evidence on\nthe route; a value near 0 means an ordinary route without an established\nqualifying problem. Intermediate values express uncertainty about whether a\nqualifying problem is actually present. Do not round every image to the same\nfew confidence levels; use the confidence warranted by its evidence.\n",
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "surface_and_level_problems": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "absent",
+              "uncertain",
+              "not_assessable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "restricted_passage": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "absent",
+              "uncertain",
+              "not_assessable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "missing_tactile_warning": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "absent",
+              "uncertain",
+              "not_assessable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "ramp_points_into_traffic": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "present",
+              "absent",
+              "uncertain",
+              "not_assessable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 160
+          }
+        },
+        "required": [
+          "status",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "p_hazard": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "required": [
+      "surface_and_level_problems",
+      "restricted_passage",
+      "missing_tactile_warning",
+      "ramp_points_into_traffic",
+      "p_hazard"
+    ],
+    "additionalProperties": false
+  },
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "low",
+  "image_detail": "high"
+}

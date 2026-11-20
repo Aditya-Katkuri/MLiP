@@ -1,0 +1,54 @@
+Validation-only revision of the sidewalk-data-3 VLM hazard baseline
+
+Two fixed prompt variants are evaluated on every one of the 382 pitt-val images.
+The requested model remains gpt-6.1-sol, low reasoning, high image detail.
+Inputs remain the existing 224x224 RGB PNG bytes, with no annotations, labels,
+filenames, collection source, coordinates, or class proportions sent to the API.
+Only the fixed prompt and one image are transmitted. OPENAI_API_KEY comes from
+the environment and is never saved. Execution uses server-side tmux.
+
+route_focused defines the public pedestrian route, excludes unrelated private
+stairs/driveways/road defects, distinguishes cosmetic cracks and nearby objects
+from qualifying defects, and asks for one short piece of evidence before p_hazard.
+evidence_checklist uses the same definitions but asks for a visible observation
+and present/absent/uncertain/not_assessable status for each group before p_hazard.
+These explanations are ordinary requested output, not access to hidden reasoning.
+All 46 tag concepts are retained. No target labels are changed.
+
+Subtype inference is unchanged: this experiment creates an alternative hazard
+score only. The checklist observations are not new subtype probabilities and
+must not be substituted into the subtype metrics.
+
+The fixed selection objective is hazard precision at the top ceil(10% * 382)=39
+images, breaking ties by hazard balanced accuracy. Precision@46 is also reported
+for continuity with earlier experiments. Ranking ties use sample_id ascending,
+and the precision range across cutoff ties is reported. Binary thresholds are
+chosen on validation from every distinct score, 0, 1 and just above the maximum;
+the lowest threshold wins balanced-accuracy ties. The original prompt's saved
+validation scores are evaluated with the same threshold search for comparison.
+Candidate ties prefer the original, then route_focused, then evidence_checklist.
+
+The prompts and criteria are frozen before API requests. Both candidates receive
+the same complete validation population, rather than different cherry-picked
+examples. Calls are interleaved and use up to six concurrent requests. There are
+at most 764 new successful calls for this experiment. A durable per-call journal
+supports resume without repeating completed successes. Failed calls stop further
+submissions while in-flight calls are saved. The runner checks image and input
+hashes, raw output consistency, model identity, and final record coverage.
+
+The experiment reads only pitt-val.csv and pitt-val image files. It does not
+read test images, predictions, labels or metrics. Earlier development discussions
+included a test-error audit; consequently this is explicitly a development
+experiment, not a claim of an untouched historical test set or a new independent
+estimate. Prompt selection and all newly computed comparisons use validation.
+No new test API calls or test metric calculations are authorized by this runner.
+
+Limitations: image-level predictions cannot exactly reproduce annotation-specific
+or missing-tag-based labels. This experiment cannot repair incomplete ground
+truth. Confidence values are elicited model scores, not calibrated probabilities.
+Improvements on validation require subsequent independently evaluated confirmation.
+
+Artifacts: frozen prompts, schemas, source and config hashes; input manifest;
+raw response journal; per-variant incremental predictions and rankings; threshold
+sweeps; validation_comparison.csv; selected_hazard_model.json; results.json;
+final_verification.json; status.json. The original run and paper table are kept.

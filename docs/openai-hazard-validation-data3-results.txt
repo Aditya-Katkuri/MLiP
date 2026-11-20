@@ -1,0 +1,61 @@
+VLM hazard revision: validation results
+
+Two prompt revisions were completed on all 382 pitt-val images. All 764 new
+API calls succeeded. The model remains GPT-6.1 Sol with low reasoning, using
+exact existing 224x224 RGB inputs. No test images or test predictions were used
+in this experiment, and the existing subtype baseline is unchanged.
+
+Candidate               P@top10% (top39)  P@46    Hazard BA  Threshold
+Original                 35.90% (14/39)   39.13%    60.68%       0.88
+Route-focused            53.85% (21/39)   47.83%    66.79%       0.76
+Evidence checklist       56.41% (22/39)   52.17%    63.85%       0.30
+
+Selected: evidence_checklist, under the predeclared precision-first rule.
+The selected hazard threshold is 0.30 (predict hazard when p_hazard >= 0.30).
+Ranking uses raw p_hazard descending with sample_id ascending on ties.
+Precision@top10% improved by 20.51 percentage points, or eight more hazards
+in the top 39. Precision@46 improved by 13.04 points. ROC AUC rose from
+0.58603 to 0.65616. These are validation development/selection results.
+
+Balanced accuracy uses a dense validation threshold search for every candidate,
+including the original. The original previously reported coarse-grid validation
+BA was 53.97% at 0.70; recalibration alone raises it to 60.68% at 0.88.
+Changing the threshold does not change precision@top10%.
+
+Prompt changes: define the public walking route; exclude unrelated private
+entrance steps, off-route driveway slopes and roadway damage; distinguish
+ordinary cracks/joints and nearby objects from qualifying route defects;
+clarify tactile-warning applicability and ramp alignment; require visible
+observations for each group before producing a dedicated hazard confidence.
+The checklist observations are not subtype predictions or hidden reasoning.
+They do not replace the existing conditional subtype outputs.
+
+The selected prompt reduces false positives among the 50 hand-collected
+ordinary validation sidewalks from 15 to 8 at the respective selected
+classification thresholds; their count in the top 39 falls from four to one.
+Two inspected private-entrance-step examples fell from 0.94/0.98 to 0.08/0.09.
+All dataset labels and images remain unchanged.
+
+Limitations: the two revised candidates differ by only one top-39 image.
+The checklist cutoff has five tied images for one remaining slot; alternative
+tie ordering gives 53.85%-56.41%. Route-focused is 53.85% for every cutoff
+tie ordering and has better hazard BA. The deterministic predeclared rule
+selects checklist, but its one-image lead is not a robust superiority claim.
+Image-level versus annotation-level mismatch, missing tags, and low resolution
+remain unresolved. Earlier work examined historical test errors; this prompt
+revision is development following that audit, not a newly untouched test study.
+Test generalization has not been evaluated for either revised prompt.
+
+Server run:
+/data/eda/openai_baseline/hazard_validation_revision_20261120T211054Z
+
+Server runner: /data/repo/MLiP/src/baseline/openai_hazard_validation_data3.py
+Selected configuration: /data/repo/MLiP/src/baseline/openai_hazard_data3_selected.json
+
+Local evidence: results/ contains both frozen prompts, schemas, configuration,
+per-image predictions, rankings, threshold sweeps and verification. Full raw
+responses remain in the server predictions.jsonl. validation_paired_predictions.csv
+joins the three candidates with provenance and visible observations.
+independent_verification.json recomputes rankings, thresholds and confusion
+counts without importing the experiment evaluator. Seven unit tests and a
+full offline fake-API run/resume test passed; resume made no repeated requests.

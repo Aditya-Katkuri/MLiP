@@ -1,0 +1,56 @@
+Revised VLM hazard baseline: sidewalk-data-3 test results
+
+The validation-selected evidence_checklist prompt was applied unchanged to all
+380 Pittsburgh test images. All 380 requests completed successfully, using
+gpt-6.1-sol with low reasoning and the existing 224x224 RGB PNG inputs.
+The hazard threshold remained fixed at 0.30; no test threshold or prompt search
+was performed. The original four subtype probability outputs and their original
+validation-selected thresholds were retained.
+
+Metric                                  Original       Revised hazard
+Hazard precision at top 10% (top 38)       47.37%            60.53%
+True hazards in top 38                    18/38             23/38
+Hazard precision@46                      45.65%            65.22%
+True hazards in top 46                    21/46             30/46
+Hazard balanced accuracy                 57.54%            63.03%
+Hazard classification precision          50.32%            59.44%
+Hazard classification recall             90.80%            61.49%
+Hazard specificity                       24.27%            64.56%
+Hazard classification threshold           0.70              0.30
+Subtype macro binary balanced accuracy   68.30%            68.30%
+
+The revised hazard confusion counts are TP=107, FN=67, TN=133, FP=73.
+Primary subtype metrics use all 174 true hazards, including hazards missed by
+the binary detector. They are unchanged. Whole-pipeline metrics with subtype
+decisions gated by the new hazard detector are saved separately.
+
+The top-38 cutoff score is 0.90. Ten images share that score, and two are
+included using the predeclared sample_id-ascending tie rule. Other tie orders
+would yield 57.89%-63.16% precision@38. The top 46 includes all ten tied images,
+so precision@46 has no cutoff-tie ambiguity.
+
+Results were independently recomputed from the exported predictions, checking
+all 380 identities, target labels, fixed threshold decisions, subtype score and
+decision preservation, ranking counts, and the frozen selection fingerprint.
+
+Server result directory:
+/data/eda/openai_baseline/hazard_checklist_test_20261120T213553Z
+
+Selected validation configuration SHA-256:
+963bd410b0cb2f389a07df9463782d68b731d22d9055a18a61ffd29f87814381
+
+Files include the frozen prompt/schema/configuration, raw predictions.jsonl,
+pitt-test_hazard_predictions.csv, merged pitt-test_predictions.csv, ranked
+top38/top46 exports, test_comparison.csv, pitt-test_metrics.json,
+pitt-test_per_group_metrics.csv, and final_verification.json.
+
+Related code and documentation:
+src/baseline/openai_hazard_test_data3.py
+src/baseline/openai_hazard_data3_selected.json
+docs/openai-hazard-test-data3.txt
+docs/openai-hazard-validation-data3-results.txt
+
+These results follow the historical test-error audit described in the validation
+documentation. The new evaluation applies a frozen validation-selected revision;
+it does not constitute a newly untouched test set. Annotation-specific labels,
+missing-tag assumptions and low input resolution remain limitations.
