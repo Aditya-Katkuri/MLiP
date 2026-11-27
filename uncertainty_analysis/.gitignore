@@ -1,0 +1,30 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Local transfers, raw archives and historical working copies.
+/inputs/*.zip
+/work/
+/ensemble_training/
+/LOCAL_FILES.md
+
+# LaTeX intermediates; keep the small verification receipts with the reports.
+/latex/build/*
+!/latex/build/verification.json
+!/latex/build/combined_verification.json
+/latex/*.aux
+/latex/*.log
+/latex/*.out
+/latex/*.fls
+/latex/*.fdb_latexmk
+/latex/*.synctex.gz
+
+# Generated scientific figures and compact ranking matrices are report evidence.
+# These scoped exceptions do not include dataset images or trained weights.
+!/results/point_2/validation_lambda_sweep.png
+!/results/point_3/*_rank_intervals.png
+!/results/point_3/*_top_k_frequency.png
+!/results/point_4/*_heatmap.png
+!/results/point_3/*_ranks.npz
+!/results/point_3/*_pairwise.npz
+!/results/point_4/*_pairwise.npz

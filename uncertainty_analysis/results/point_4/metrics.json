@@ -1,0 +1,79 @@
+{
+  "metrics": {
+    "pitt-val": {
+      "mean": {
+        "n_images": 382,
+        "hazards": 157,
+        "k": 46,
+        "selected_fraction": 0.12041884816753927,
+        "hits": 34,
+        "precision_at_k": 0.7391304347826086,
+        "recall_at_k": 0.21656050955414013
+      },
+      "expected_rank": {
+        "n_images": 382,
+        "hazards": 157,
+        "k": 46,
+        "selected_fraction": 0.12041884816753927,
+        "hits": 34,
+        "precision_at_k": 0.7391304347826086,
+        "recall_at_k": 0.21656050955414013
+      },
+      "consensus": {
+        "n_images": 382,
+        "hazards": 157,
+        "k": 46,
+        "selected_fraction": 0.12041884816753927,
+        "hits": 34,
+        "precision_at_k": 0.7391304347826086,
+        "recall_at_k": 0.21656050955414013
+      }
+    },
+    "pitt-test": {
+      "mean": {
+        "n_images": 380,
+        "hazards": 174,
+        "k": 46,
+        "selected_fraction": 0.12105263157894737,
+        "hits": 27,
+        "precision_at_k": 0.5869565217391305,
+        "recall_at_k": 0.15517241379310345
+      },
+      "expected_rank": {
+        "n_images": 380,
+        "hazards": 174,
+        "k": 46,
+        "selected_fraction": 0.12105263157894737,
+        "hits": 27,
+        "precision_at_k": 0.5869565217391305,
+        "recall_at_k": 0.15517241379310345
+      },
+      "consensus": {
+        "n_images": 380,
+        "hazards": 174,
+        "k": 46,
+        "selected_fraction": 0.12105263157894737,
+        "hits": 27,
+        "precision_at_k": 0.5869565217391305,
+        "recall_at_k": 0.15517241379310345
+      }
+    }
+  },
+  "pairwise_summary": {
+    "pitt-val": {
+      "unordered_pairs": 72771,
+      "pairs_with_any_score_tie": 22,
+      "pairs_tied_in_all_heads": 22,
+      "equal_pairwise_preference_pairs": 235,
+      "uncertain_preference_pairs": 5497
+    },
+    "pitt-test": {
+      "unordered_pairs": 72010,
+      "pairs_with_any_score_tie": 12,
+      "pairs_tied_in_all_heads": 12,
+      "equal_pairwise_preference_pairs": 258,
+      "uncertain_preference_pairs": 5686
+    }
+  },
+  "k": 46
+}

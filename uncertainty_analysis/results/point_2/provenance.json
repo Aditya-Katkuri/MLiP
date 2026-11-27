@@ -1,0 +1,117 @@
+{
+  "archive": "/data/repo/MLiP/notebooks/colab_results/ensemble/128_bootstrap.zip",
+  "archive_sha256": "806c54b8e09749ef5d677ee0dcbf7394793d7f87a9b9818cfef41b845ab000e0",
+  "run_id": "20261126T230142Z-92d44f",
+  "verified_splits": {
+    "pitt-val": {
+      "n_images": 382,
+      "hazards": 157,
+      "manifest_sha256": "32bbce7479f2f366aed2f008be127d7ba4c30fd35aa91feb5e5f704f090319bc"
+    },
+    "pitt-test": {
+      "n_images": 380,
+      "hazards": 174,
+      "manifest_sha256": "bff64ae48ef512c0e722cf96cd77f06090411386ef0217242d39740d7600388a"
+    }
+  },
+  "n_members": 128,
+  "configuration": {
+    "version": "hazard-bootstrap-raw-v2",
+    "settings": {
+      "n_members": 128,
+      "lr": 3e-05,
+      "weight_decay": 0.01,
+      "batch_size": 64,
+      "updates": 5000,
+      "log_every": 1000,
+      "bootstrap_seed_base": 1000,
+      "init_seed_base": 2000,
+      "batch_seed_base": 3000
+    },
+    "training_split": "pitt-train",
+    "task": "hazard_only",
+    "backbone": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+    "backbone_revision": "5931719e67bbdb9737e363e781fb0c67687896bc",
+    "expected_dataset_hashes": {
+      "other-cities-train.csv": "dc88d9a1fd7683af2f6d551922904035b871577a0b9da79dcc797b79fd5719d5",
+      "pitt-train.csv": "6fdc86fffcf59152187011a2dd55d5594e63f17ac7abb01529fdf4b79dc63082",
+      "pitt-val.csv": "32bbce7479f2f366aed2f008be127d7ba4c30fd35aa91feb5e5f704f090319bc",
+      "pitt-test.csv": "bff64ae48ef512c0e722cf96cd77f06090411386ef0217242d39740d7600388a",
+      "label_schema.json": "b429abdd786bc6c6f191b5fec0d0104171f2722f03ce819ea71f53bdeab911db",
+      "COMPLETE.json": "40a4b52bf4b07084e5fcb04d0e8f3b712cc7cef282861603a0d0ee58c753b827"
+    },
+    "pooling": "cls",
+    "backbone_frozen": true,
+    "core_sha256": "c9532d9f3e23496f3e188a3f6832b18b2cd360a82d1cce8696ea936f9b690568",
+    "inference_sha256": "4a390d5c06ad01571025b41f4999d92108160e53753626768e0da5ab4351020d",
+    "configuration_source": {
+      "source_notebook": "/data/repo/MLiP/notebooks/dino_sidewalk_data_3.ipynb",
+      "source_results_directory": "/data/repo/MLiP/notebooks/colab_results/dino_sidewalk_data_3_runs_extracted/20261119T230431Z-1cd3eb",
+      "configuration_id": "68caf0783493ae93",
+      "selection_sha256": "f157068164a0fa73ba265da500a51f7f66757a59fd4751fb1ee8f0968859f258",
+      "config_sha256": "c7d49f9598b2ddd429469fb268e83b648ab89ade4caed3e4f22d7dd1535cfc64",
+      "selected_configuration": {
+        "plan": "pitt",
+        "lr": 3e-05,
+        "weight_decay": 0.01,
+        "batch_size": 64,
+        "hazard_threshold": 0.5,
+        "precision_at_k_mean": 0.717391304347826,
+        "hazard_ba_mean": 0.6292663364000943
+      },
+      "original_selection_rule": "Maximum mean validation precision@46 (integer summed top-k hits); tie-break maximum mean hazard BA at selected threshold.",
+      "original_checkpoint_rule": "Final update only; no early-stopping/checkpoint search."
+    },
+    "optimizer": "Adam",
+    "optimizer_betas": [
+      0.9,
+      0.999
+    ],
+    "optimizer_eps": 1e-08,
+    "loss": "unweighted hazard binary cross entropy with logits",
+    "checkpoint_rule": "final_update_only",
+    "bootstrap": "replacement sampling of exact-pixel clusters stratified by binary-label composition",
+    "export": "raw independent probabilities; no aggregation, thresholds, ranking or evaluation",
+    "prediction_splits": [
+      "pitt-train",
+      "pitt-val",
+      "pitt-test"
+    ],
+    "preprocessing": {
+      "size": [
+        224,
+        224
+      ],
+      "mode": "RGB",
+      "resize": "full_image_bicubic",
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ]
+    },
+    "feature_precision": "float16",
+    "head_precision": "float32"
+  },
+  "input_verification": "Archive-member SHA-256; NPZ/CSV and dataset-manifest identity/label checks.",
+  "python": "3.11.15",
+  "numpy": "2.4.6",
+  "pandas": "2.2.3",
+  "scipy": "1.17.1",
+  "script_sha256": {
+    "point_2_adjusted_scores.py": "74c79aa9e40b0b8e81caad6eaf700237a63066640fd0dbe75b803781d0e95875",
+    "run_all.py": "62d547477183760e63f8fa648aa6bfb33d0b9481bb379be5c57f6d4379186ff9",
+    "point_3_rank_distributions.py": "83463d3f73e6a301315695ac09357bb4a6a0d1375518f96c55d7f81d83bc03c0",
+    "point_4_pairwise_consensus.py": "54fe1f5904eb444b8c4da5ba261b5e1ce468ac7247e32747c6017c9a8876acd6",
+    "verify_results.py": "17c22a1ff6af6337a4c0b04f7d4adf02adfee968962f5ae457566f79f0b94fec",
+    "consensus_solver.py": "1727293fc46ed62567e4d903026bc2ff9e312bd17c75bc78948110f47f35319b",
+    "__init__.py": "bcf339efa38cf12d16bd991e43ef03e9862a6362854dc4849a363d4adf9eafb5",
+    "common.py": "df5a3fbc0e3914f8e31706a1e28128257b536d409ff0b2fee1427eaa34b0884b"
+  },
+  "reference_pdf_sha256": "60eb8083b7d97682f170e5f3db7d9e00a5a3f481854e5363e25a99b67677ca56"
+}

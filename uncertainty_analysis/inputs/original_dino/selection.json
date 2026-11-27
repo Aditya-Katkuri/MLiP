@@ -1,0 +1,70 @@
+{
+  "hazard": {
+    "summary": {
+      "config_id": "68caf0783493ae93",
+      "plan": "pitt",
+      "lr": 3e-05,
+      "weight_decay": 0.01,
+      "batch_size": 64,
+      "hazard_threshold": 0.5,
+      "group_thresholds": "[0.5, 0.3, 0.5, 0.3]",
+      "topk_hits_sum": 99,
+      "precision_at_k_mean": 0.717391304347826,
+      "precision_at_k_std": 0.021739130434782594,
+      "hazard_ba_mean": 0.6292663364000943,
+      "hazard_ba_std": 0.018758467874733075,
+      "group_macro_ba_mean": 0.6484636286300097,
+      "group_macro_ba_std": 0.005524348451560382
+    },
+    "trial_ids": [
+      "200e2f618e2a0764",
+      "c9485a8e42365754",
+      "36e10d55a0a34890"
+    ],
+    "hazard_deployment_trial": "c9485a8e42365754",
+    "group_deployment_trial": "c9485a8e42365754"
+  },
+  "tag_groups": {
+    "summary": {
+      "config_id": "22f17857d25b5485",
+      "plan": "other_then_pitt",
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "batch_size": 64,
+      "hazard_threshold": 0.5,
+      "group_thresholds": "[0.3, 0.3, 0.3, 0.3]",
+      "topk_hits_sum": 89,
+      "precision_at_k_mean": 0.644927536231884,
+      "precision_at_k_std": 0.012551092808470117,
+      "hazard_ba_mean": 0.6320547298891248,
+      "hazard_ba_std": 0.003655021798486927,
+      "group_macro_ba_mean": 0.678033546967526,
+      "group_macro_ba_std": 0.001894866340918123
+    },
+    "trial_ids": [
+      "60073cd9ac62e97f",
+      "20281c6fa716c544",
+      "175b6f87d7439c45"
+    ],
+    "hazard_deployment_trial": "60073cd9ac62e97f",
+    "group_deployment_trial": "175b6f87d7439c45"
+  },
+  "k": 46,
+  "group_order": [
+    "surface_and_level_problems",
+    "restricted_passage",
+    "missing_tactile_warning",
+    "ramp_points_into_traffic"
+  ],
+  "validation_split": "pitt-val",
+  "test_used_for_selection": false,
+  "hazard_rule": "Maximum mean validation precision@46 (integer summed top-k hits); tie-break maximum mean hazard BA at selected threshold.",
+  "group_rule": "Maximum mean macro group BA on ALL true validation hazards, each group threshold selected by its mean BA.",
+  "seed_rule": "Configuration selected across three seeds. Single deployment replica selected within winner by same validation objective; smaller seed breaks ties. All selected replicas also saved.",
+  "threshold_grid": [
+    0.3,
+    0.5,
+    0.7
+  ],
+  "checkpoint_rule": "Final update only; no early-stopping/checkpoint search."
+}

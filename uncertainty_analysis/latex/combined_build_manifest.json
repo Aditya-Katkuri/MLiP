@@ -1,0 +1,50 @@
+{
+  "inputs": {
+    "inputs/original_dino/verification.json": "217b112871153608461e27248df529a3ce95f97fcec6e911afb0a3e3594a1701",
+    "inputs/original_dino/selection.json": "f157068164a0fa73ba265da500a51f7f66757a59fd4751fb1ee8f0968859f258",
+    "results/verification.json": "d097f6875d814fcfbc5ca6b4a67e720e4b1be511fb2df2114d59adaaa51981d2",
+    "results/point_2/metrics.json": "517230e30ca9aac6bcd5b3d55c91b8dbf451a8d65d44e6879fb86eb0df258b54",
+    "results/point_3/metrics.json": "228e1cd5e86e803f5aacb6846d5d640b08cd5702292e28db1c8b17b4b2d89b46",
+    "results/point_4/metrics.json": "3820c39b8760c336f7d35645ced81afbd15f1b8fc63137bce01e59123a7e7527",
+    "results/point_4/pitt-val_solver.json": "f2a4ff4ccf911e357806469e7805b4ae48607cceabeafd514ab3122fd34835e8",
+    "results/point_4/pitt-test_solver.json": "331a68d8516c290e0b725a075b3683275309f630f80ac19d03cbac6382a7bd01",
+    "results/point_2/validation_lambda_sweep.pdf": "f93b067a90ba424c34d9fc7edbd634c33a2f79cbda2168e912e4f4d089942a36",
+    "results/point_3/pitt-val_rank_intervals.pdf": "100b3b6724f0c84989c1708aee97e90f267caf04546c598a213c0d221f390410",
+    "results/point_3/pitt-test_rank_intervals.pdf": "35022dc59e09193b0db51695d0fc27a8bf82c852eae2ded3ac8e192cf628f19b",
+    "results/point_4/pitt-val_pairwise_heatmap.pdf": "9d5d85cbfaa44dd70171afdf80fd3928f58a19ba7e11a5036b04c7d06c73dd8b",
+    "results/point_4/pitt-test_pairwise_heatmap.pdf": "197cc6bafd2e4f6ff50ec4655030100e1bac50d0e59ef66b1433efd536508073"
+  },
+  "outputs": {
+    "uncertainty_analysis.tex": "94680f84541ae8a9a2a21100cfbba89f142745fb0483aa382f4259bc19ed4fd0",
+    "uncertainty_analysis.pdf": "dce1505de6bbdcc24af0ab78889d57b187649e257175b521c9fd4ff1b5463215",
+    "combined_selection.json": "53daee5b2a0cd6e762a4809cd516efe61e5eddbccade79c773818495d6da508f"
+  },
+  "builder_sha256": "1e7ca713786d9c8a96f6b4aaa83f97b086aec66c53fcd7399ba0037eecc60695",
+  "validation_only_selection": {
+    "selected": "original_single_head",
+    "criterion": "Maximum validation precision@46 among the two reference rankings.",
+    "tie_break": "Retain the original one-head model when tied with the 128-head mean; fewer fitted heads.",
+    "candidate_validation_hits": {
+      "original": 34,
+      "mean": 34
+    },
+    "uncertainty_comparator_validation_hits": {
+      "adjusted": 34,
+      "lower_q05": 32,
+      "expected_rank": 34,
+      "top_k_frequency": 34,
+      "consensus": 34
+    },
+    "k": 46,
+    "test_used_for_selection": false,
+    "strict_validation_winner": false
+  },
+  "document_order_check": "All test results, including figures, appear after the explicit selection.",
+  "top_level_sections": [
+    "Training independent heads with bootstrapping",
+    "Uncertainty-adjusted probability ranking",
+    "Rank distributions and selection frequencies",
+    "Pairwise outranking and consensus",
+    "Results"
+  ]
+}

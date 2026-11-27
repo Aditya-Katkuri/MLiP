@@ -1,0 +1,19 @@
+{
+  "selected": "original_single_head",
+  "criterion": "Maximum validation precision@46 among the two reference rankings.",
+  "tie_break": "Retain the original one-head model when tied with the 128-head mean; fewer fitted heads.",
+  "candidate_validation_hits": {
+    "original": 34,
+    "mean": 34
+  },
+  "uncertainty_comparator_validation_hits": {
+    "adjusted": 34,
+    "lower_q05": 32,
+    "expected_rank": 34,
+    "top_k_frequency": 34,
+    "consensus": 34
+  },
+  "k": 46,
+  "test_used_for_selection": false,
+  "strict_validation_winner": false
+}

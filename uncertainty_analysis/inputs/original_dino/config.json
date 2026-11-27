@@ -1,0 +1,92 @@
+{
+  "version": "dino-sidewalk-data-3-v1",
+  "settings": {
+    "train_plans": {
+      "pitt": [
+        [
+          "pitt-train",
+          5000
+        ]
+      ],
+      "other_then_pitt": [
+        [
+          "other-cities-train",
+          5000
+        ],
+        [
+          "pitt-train",
+          5000
+        ]
+      ]
+    },
+    "learning_rates": [
+      1e-05,
+      3e-05,
+      0.0001,
+      0.0003,
+      0.001,
+      0.003,
+      0.01
+    ],
+    "weight_decays": [
+      0.0,
+      0.01
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "batch_size": 64,
+    "eval_every": 250,
+    "thresholds": [
+      0.3,
+      0.5,
+      0.7
+    ],
+    "k": 46
+  },
+  "backbone": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+  "backbone_revision": "5931719e67bbdb9737e363e781fb0c67687896bc",
+  "pooling": "cls",
+  "backbone_frozen": true,
+  "expected_dataset_hashes": {
+    "other-cities-train.csv": "dc88d9a1fd7683af2f6d551922904035b871577a0b9da79dcc797b79fd5719d5",
+    "pitt-train.csv": "6fdc86fffcf59152187011a2dd55d5594e63f17ac7abb01529fdf4b79dc63082",
+    "pitt-val.csv": "32bbce7479f2f366aed2f008be127d7ba4c30fd35aa91feb5e5f704f090319bc",
+    "pitt-test.csv": "bff64ae48ef512c0e722cf96cd77f06090411386ef0217242d39740d7600388a",
+    "label_schema.json": "b429abdd786bc6c6f191b5fec0d0104171f2722f03ce819ea71f53bdeab911db",
+    "COMPLETE.json": "40a4b52bf4b07084e5fcb04d0e8f3b712cc7cef282861603a0d0ee58c753b827"
+  },
+  "group_order": [
+    "surface_and_level_problems",
+    "restricted_passage",
+    "missing_tactile_warning",
+    "ramp_points_into_traffic"
+  ],
+  "core_code_sha256": "a03d5dd148b5915a774c03f56ccdb276a55182ed4c20fbc88fd4e95f24857ebf",
+  "inference_code_sha256": "69f53bb9c02c09c6f1486fa722890f333c72e730b98b108276466e4a2af4bb79",
+  "feature_precision": "float16",
+  "head_precision": "float32",
+  "preprocessing": {
+    "size": [
+      224,
+      224
+    ],
+    "resize": "full_image_bicubic",
+    "mode": "RGB",
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "checkpoint_selection": "final_step_only",
+  "optimizer": "Adam",
+  "loss": "unweighted hazard BCE + mean four-group BCE masked to true hazards"
+}

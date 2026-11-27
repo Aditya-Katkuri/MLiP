@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "results/verification.json": "d097f6875d814fcfbc5ca6b4a67e720e4b1be511fb2df2114d59adaaa51981d2",
+    "results/point_2/metrics.json": "517230e30ca9aac6bcd5b3d55c91b8dbf451a8d65d44e6879fb86eb0df258b54",
+    "results/point_2/analysis.md": "9aa71f780a414e568ce141f7d6dfb1796e998442c14c47b5c474fdc2cd5a8e70",
+    "results/point_3/metrics.json": "228e1cd5e86e803f5aacb6846d5d640b08cd5702292e28db1c8b17b4b2d89b46",
+    "results/point_3/analysis.md": "abd114dd578b9534bd48badbee3227b244b49289ac046e8bad4f8a67608f3804",
+    "results/point_4/metrics.json": "3820c39b8760c336f7d35645ced81afbd15f1b8fc63137bce01e59123a7e7527",
+    "results/point_4/analysis.md": "67f3e0b71fc6cbcf49d1ab247caf9d3a36d539acfa23a072173a6ae81d573aaa",
+    "results/point_4/pitt-val_solver.json": "f2a4ff4ccf911e357806469e7805b4ae48607cceabeafd514ab3122fd34835e8",
+    "results/point_4/pitt-test_solver.json": "331a68d8516c290e0b725a075b3683275309f630f80ac19d03cbac6382a7bd01",
+    "latex/figures/point_4_pitt-test_top20_heatmap.pdf": "f75007d89957f7608f5efde5d85ffb6ca2c00bc14bf9e1319b958bb11f2df08e",
+    "latex/figures/point_3_pitt-test_top_k_frequency.pdf": "257ad706bafc67feb67d1f31e6d9c7958502778e7c9315fd347fe3db0bd7a4f6",
+    "latex/figures/point_4_pitt-test_pairwise_heatmap.pdf": "197cc6bafd2e4f6ff50ec4655030100e1bac50d0e59ef66b1433efd536508073",
+    "latex/figures/point_3_pitt-test_rank_intervals.pdf": "35022dc59e09193b0db51695d0fc27a8bf82c852eae2ded3ac8e192cf628f19b",
+    "latex/figures/point_4_pitt-val_pairwise_heatmap.pdf": "9d5d85cbfaa44dd70171afdf80fd3928f58a19ba7e11a5036b04c7d06c73dd8b",
+    "latex/figures/point_3_pitt-val_rank_intervals.pdf": "100b3b6724f0c84989c1708aee97e90f267caf04546c598a213c0d221f390410",
+    "latex/figures/point_2_validation_lambda_sweep.pdf": "f93b067a90ba424c34d9fc7edbd634c33a2f79cbda2168e912e4f4d089942a36"
+  },
+  "outputs": {
+    "point_2_adjusted_scores.pdf": "35f7baf56038e8e4764db2b0fe099a01ad4f1f1fac411e8e5f9f559f6a222110",
+    "point_2_adjusted_scores.tex": "4a759f5cf2c9ba26607fa556b87d69416dad4a3690ef4d05cac55d24df94003c",
+    "point_3_rank_uncertainty.pdf": "939fc547a5bc00535f2a23756bd145c64f9dddcf609da8ff8735e6d638769641",
+    "point_3_rank_uncertainty.tex": "5367ecd8a76169e302fd115ef0d08f917dd5814c4a60d1c7b2c839c79bcff29d",
+    "point_4_pairwise_consensus.pdf": "7f3de87df9a5dcd558c78df2d89099900a746409278d6fe74fe6b620fd21cad5",
+    "point_4_pairwise_consensus.tex": "a780034684cb779ed891d1aebc52a927a025eef245278a5b7a3c9f394b5e0e84"
+  },
+  "builder_sha256": "e4aa3a9b8c9f2255c8ab3269dde2fd88e2aafb96cee5212a02dafc0c9ac82977",
+  "compiler": "pdfTeX 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux)"
+}

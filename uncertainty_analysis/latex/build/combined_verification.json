@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "pages": 7,
+  "latex_warnings": [],
+  "original_reference": "Original single deployment head; 34/46 validation, 26/46 test.",
+  "ensemble_reference": "Unadjusted 128-head mean; 34/46 validation, 27/46 test.",
+  "selected": "Original single head, based on validation tie and parsimony.",
+  "ordering": "PDF text and LaTeX source checked: no test results before explicit selection.",
+  "layout": "Selection paragraph, test table and paired heatmaps visually inspected.",
+  "sha256": "dce1505de6bbdcc24af0ab78889d57b187649e257175b521c9fd4ff1b5463215"
+}

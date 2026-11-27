@@ -1,0 +1,73 @@
+{
+  "status": "passed",
+  "original_source_archive": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip",
+  "original_run_id": "20261119T230431Z-1cd3eb",
+  "hazard_trial": "c9485a8e42365754",
+  "matching_train_val_test_manifests": {
+    "pitt-train": "6fdc86fffcf59152187011a2dd55d5594e63f17ac7abb01529fdf4b79dc63082",
+    "pitt-val": "32bbce7479f2f366aed2f008be127d7ba4c30fd35aa91feb5e5f704f090319bc",
+    "pitt-test": "bff64ae48ef512c0e722cf96cd77f06090411386ef0217242d39740d7600388a"
+  },
+  "source_files": {
+    "selection.json": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/selection.json",
+      "sha256": "f157068164a0fa73ba265da500a51f7f66757a59fd4751fb1ee8f0968859f258",
+      "bytes": 2387
+    },
+    "config.json": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/config.json",
+      "sha256": "c7d49f9598b2ddd429469fb268e83b648ab89ade4caed3e4f22d7dd1535cfc64",
+      "bytes": 2213
+    },
+    "pitt-val_deployment_predictions.csv": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/pitt-val_deployment_predictions.csv",
+      "sha256": "7f0ca5cc5f154a31cc9c470b2624b19b363bcb49bcb157015e60a03fc3fe746d",
+      "bytes": 122589
+    },
+    "pitt-val_deployment_metrics.json": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/pitt-val_deployment_metrics.json",
+      "sha256": "7c10b9a6c350f44ec0b2ce80c35d12d9870f06e7d70f89d99bc8ea9982f2572a",
+      "bytes": 4591
+    },
+    "pitt-test_deployment_predictions.csv": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/pitt-test_deployment_predictions.csv",
+      "sha256": "3503935f6c60489775612a34646864028b21680b83cc9fa39005a0223235bd76",
+      "bytes": 122922
+    },
+    "pitt-test_deployment_metrics.json": {
+      "source": "/home/prateik/codex_scratch/dino_sidewalk_data_3_runs.zip::20261119T230431Z-1cd3eb/pitt-test_deployment_metrics.json",
+      "sha256": "dfcb110aa1a3cc3db7a0891645c705f05dfcca48531ac5c1ec2e34f5f9338734",
+      "bytes": 4567
+    }
+  },
+  "bootstrap_training": {
+    "n_heads": 128,
+    "n_training_records": 1276,
+    "n_pixel_groups": 1236,
+    "duplicate_pairs": 40,
+    "min_unique_records": 784,
+    "max_unique_records": 840,
+    "mean_unique_records": 807.3125
+  },
+  "metrics": {
+    "pitt-val": {
+      "n_images": 382,
+      "hazards": 157,
+      "k": 46,
+      "hits": 34,
+      "precision_at_k": 0.7391304347826086,
+      "recall_at_k": 0.21656050955414013,
+      "cutoff_tied": false
+    },
+    "pitt-test": {
+      "n_images": 380,
+      "hazards": 174,
+      "k": 46,
+      "hits": 26,
+      "precision_at_k": 0.5652173913043478,
+      "recall_at_k": 0.14942528735632185,
+      "cutoff_tied": false
+    }
+  },
+  "note": "Original single deployment head; not the three-seed configuration average. Rank ties use ascending sample ID."
+}

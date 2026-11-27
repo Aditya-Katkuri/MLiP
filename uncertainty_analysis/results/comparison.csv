@@ -1,0 +1,7 @@
+method,point,validation_hits,test_hits,validation_precision_at_k,test_precision_at_k,k
+Mean probability,point_2,34,27,0.7391304347826086,0.5869565217391305,46
+Mean − 0 × SD (point 2),point_2,34,27,0.7391304347826086,0.5869565217391305,46
+5th probability percentile (point 2 comparator),point_2,32,26,0.6956521739130435,0.5652173913043478,46
+Expected rank (point 3),point_3,34,27,0.7391304347826086,0.5869565217391305,46
+Top-k frequency (point 3 comparator),point_3,34,28,0.7391304347826086,0.6086956521739131,46
+Optimal pairwise consensus (point 4),point_4,34,27,0.7391304347826086,0.5869565217391305,46

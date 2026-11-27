@@ -1,0 +1,23 @@
+{
+  "point_2_adjusted_scores": {
+    "pages": 2,
+    "warnings": [],
+    "pdf_sha256": "35f7baf56038e8e4764db2b0fe099a01ad4f1f1fac411e8e5f9f559f6a222110",
+    "text_metric_checks": "passed",
+    "layout": "visually inspected"
+  },
+  "point_3_rank_uncertainty": {
+    "pages": 4,
+    "warnings": [],
+    "pdf_sha256": "939fc547a5bc00535f2a23756bd145c64f9dddcf609da8ff8735e6d638769641",
+    "text_metric_checks": "passed",
+    "layout": "visually inspected"
+  },
+  "point_4_pairwise_consensus": {
+    "pages": 5,
+    "warnings": [],
+    "pdf_sha256": "7f3de87df9a5dcd558c78df2d89099900a746409278d6fe74fe6b620fd21cad5",
+    "text_metric_checks": "passed",
+    "layout": "visually inspected"
+  }
+}

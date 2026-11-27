@@ -1,0 +1,350 @@
+{
+  "README.md": {
+    "bytes": 3996,
+    "sha256": "395b63c6f1df783e3a5c747ec7be02c28da4c5c99d39775404a17bf9f60c3c49"
+  },
+  "comparison.csv": {
+    "bytes": 607,
+    "sha256": "ef7a7f8fdc9436b20b2bb26c2800e91e3f37c2edd928bce1ab6d5a00e9dc3a9c"
+  },
+  "point_2/analysis.md": {
+    "bytes": 4991,
+    "sha256": "9aa71f780a414e568ce141f7d6dfb1796e998442c14c47b5c474fdc2cd5a8e70"
+  },
+  "point_2/metrics.json": {
+    "bytes": 3343,
+    "sha256": "517230e30ca9aac6bcd5b3d55c91b8dbf451a8d65d44e6879fb86eb0df258b54"
+  },
+  "point_2/pitt-test_adjusted.csv": {
+    "bytes": 115115,
+    "sha256": "8061434e879403f39a62c06787e689ea742e97766cbed2cfde59ec0af4e89914"
+  },
+  "point_2/pitt-test_adjusted_top46.csv": {
+    "bytes": 13946,
+    "sha256": "3479f15d448a6349027800c267331da97adaa2b2c153bea203e433b0a7976fdd"
+  },
+  "point_2/pitt-test_lower_q05.csv": {
+    "bytes": 115186,
+    "sha256": "ca48ce1a3f82cc9e05a906664580643fab9c20acad2d9c149038d7cf105234e3"
+  },
+  "point_2/pitt-test_lower_q05_top46.csv": {
+    "bytes": 13907,
+    "sha256": "12ac33efe38d7d02626dad92d545083fbb36bde531167028d0fa56da45e27127"
+  },
+  "point_2/pitt-test_mean.csv": {
+    "bytes": 115115,
+    "sha256": "8061434e879403f39a62c06787e689ea742e97766cbed2cfde59ec0af4e89914"
+  },
+  "point_2/pitt-test_mean_top46.csv": {
+    "bytes": 13946,
+    "sha256": "3479f15d448a6349027800c267331da97adaa2b2c153bea203e433b0a7976fdd"
+  },
+  "point_2/pitt-val_adjusted.csv": {
+    "bytes": 114995,
+    "sha256": "45bc8728ae7580506963c58d38e5e4a2ad64b4b55cdbfbd943995e9dc8ff3b7b"
+  },
+  "point_2/pitt-val_adjusted_top46.csv": {
+    "bytes": 13901,
+    "sha256": "1f6871c8655e3bc142c671e71ede4349ced663380138aa0fc17cfd31d3542b3c"
+  },
+  "point_2/pitt-val_lower_q05.csv": {
+    "bytes": 115092,
+    "sha256": "4e7cdaa9dfefd7ba5a4537314897b0b39fd594b54fd63a24c18a9806d3830508"
+  },
+  "point_2/pitt-val_lower_q05_top46.csv": {
+    "bytes": 13887,
+    "sha256": "50f1ef49b9ad8d35fc9d512cbebbb8d2f0ee3f0302736a19a8a717b8747af2b7"
+  },
+  "point_2/pitt-val_mean.csv": {
+    "bytes": 114995,
+    "sha256": "45bc8728ae7580506963c58d38e5e4a2ad64b4b55cdbfbd943995e9dc8ff3b7b"
+  },
+  "point_2/pitt-val_mean_top46.csv": {
+    "bytes": 13901,
+    "sha256": "1f6871c8655e3bc142c671e71ede4349ced663380138aa0fc17cfd31d3542b3c"
+  },
+  "point_2/provenance.json": {
+    "bytes": 4862,
+    "sha256": "814c71798e3dcbc520044876c41b0e7e307d698f1ec7eea8a46e18353a7bf0ab"
+  },
+  "point_2/selection.json": {
+    "bytes": 1114,
+    "sha256": "cd4c3012bbc1f5a066c9b7cec5c8e3308836d6c7d95c48be26085820dfab1b81"
+  },
+  "point_2/validation_lambda_sweep.csv": {
+    "bytes": 6286,
+    "sha256": "c3a2612672d835b821a63d8c0370892f2d31acd444b366f3af20276b4172c835"
+  },
+  "point_2/validation_lambda_sweep.pdf": {
+    "bytes": 16968,
+    "sha256": "f93b067a90ba424c34d9fc7edbd634c33a2f79cbda2168e912e4f4d089942a36"
+  },
+  "point_2/validation_lambda_sweep.png": {
+    "bytes": 51540,
+    "sha256": "4630a219fd1cf427a599ac0aefa7efbfac65d66b631f7625cc1609719a1d206e"
+  },
+  "point_3/analysis.md": {
+    "bytes": 6002,
+    "sha256": "abd114dd578b9534bd48badbee3227b244b49289ac046e8bad4f8a67608f3804"
+  },
+  "point_3/metrics.json": {
+    "bytes": 2904,
+    "sha256": "228e1cd5e86e803f5aacb6846d5d640b08cd5702292e28db1c8b17b4b2d89b46"
+  },
+  "point_3/pitt-test_expected_rank.csv": {
+    "bytes": 130433,
+    "sha256": "40a712e477580eace52110ec5db3d4a269b6ad32e00393c3ad025689fc8dc657"
+  },
+  "point_3/pitt-test_expected_rank_top46.csv": {
+    "bytes": 16262,
+    "sha256": "44c3dcefd4388f2c1d049ea88a216e410c3c0b747fb31bfc4f7d3807790787c0"
+  },
+  "point_3/pitt-test_mean.csv": {
+    "bytes": 130433,
+    "sha256": "597aaf0bf4830695d18ceb8f4cf9e1e4d5ccf6cf80dacac867d5535571355acc"
+  },
+  "point_3/pitt-test_mean_top46.csv": {
+    "bytes": 16262,
+    "sha256": "6b7a12dfff198c50c797fc2507156aea412485fc406350778ad8d07d7fce12c0"
+  },
+  "point_3/pitt-test_pairwise.npz": {
+    "bytes": 337339,
+    "sha256": "aa04e5691e8f32d752c1a68a997f5be3f0958ccd8c5f8be4adf29f8b95027a05"
+  },
+  "point_3/pitt-test_pairwise_probability.csv": {
+    "bytes": 1104760,
+    "sha256": "30cec382ffdd1c582a742ef4233f5aac81fa8a12b34179da162091fbd51cc39a"
+  },
+  "point_3/pitt-test_pairwise_tie_probability.csv": {
+    "bytes": 593574,
+    "sha256": "ba26f2814f1990e342c6158c128651a7aaa9e8b8d8caad23c09e1ff88f0f6966"
+  },
+  "point_3/pitt-test_rank_intervals.pdf": {
+    "bytes": 27211,
+    "sha256": "35022dc59e09193b0db51695d0fc27a8bf82c852eae2ded3ac8e192cf628f19b"
+  },
+  "point_3/pitt-test_rank_intervals.png": {
+    "bytes": 128475,
+    "sha256": "e2bf34d7a9e0d3872cd8f0cc8b60cf62df5cdc4bd78840301ccca7d3cbff121d"
+  },
+  "point_3/pitt-test_ranks.csv": {
+    "bytes": 287140,
+    "sha256": "c90752465ed9807a1661f3c0f34f1a2162af2e538ccf217aef0ca25d2b3a9b6a"
+  },
+  "point_3/pitt-test_ranks.npz": {
+    "bytes": 95116,
+    "sha256": "bc3494eb7fd2aadf1a3726cfe0f24d9e93409e10638c58125f8f6b53341a0179"
+  },
+  "point_3/pitt-test_top_k_frequency.csv": {
+    "bytes": 130433,
+    "sha256": "245c941b3421afd8eb073e2557aa09c3e92c658c8a6cd4ac8a65e64f65f4fe96"
+  },
+  "point_3/pitt-test_top_k_frequency.pdf": {
+    "bytes": 15126,
+    "sha256": "257ad706bafc67feb67d1f31e6d9c7958502778e7c9315fd347fe3db0bd7a4f6"
+  },
+  "point_3/pitt-test_top_k_frequency.png": {
+    "bytes": 60997,
+    "sha256": "bab3a2ee3385dbb73edc4e8d7ad1dd6fe900bd2010a53d90841ab2f48e7a20bc"
+  },
+  "point_3/pitt-test_top_k_frequency_top46.csv": {
+    "bytes": 16225,
+    "sha256": "0c49efa448dfcaf0f154b5abbebc2793455d1c9a8b484f69d2ce65196cc7b423"
+  },
+  "point_3/pitt-val_expected_rank.csv": {
+    "bytes": 130106,
+    "sha256": "d0490d200800650ee43784e8f7cfd11c094583f1ad252c09dcd6e2ec20eaa2e3"
+  },
+  "point_3/pitt-val_expected_rank_top46.csv": {
+    "bytes": 16122,
+    "sha256": "4d9546c8d12b3872e4ecaf4105e4183e39d11081a899fc555363492efcd09559"
+  },
+  "point_3/pitt-val_mean.csv": {
+    "bytes": 130106,
+    "sha256": "73f546d71fa839bbe988e33f831bbac7f08d3e8a08a01c6bd994decabcbf22f8"
+  },
+  "point_3/pitt-val_mean_top46.csv": {
+    "bytes": 16122,
+    "sha256": "0d554be89bc20babedebc67a24fde659ae50cee97a1d0e434998dcf31e452401"
+  },
+  "point_3/pitt-val_pairwise.npz": {
+    "bytes": 324109,
+    "sha256": "e184f3a2835bd3edb000eb8bf606804384f8dbfa2a3fb83e2206d70ac13fab0d"
+  },
+  "point_3/pitt-val_pairwise_probability.csv": {
+    "bytes": 1102508,
+    "sha256": "3b821fe11b05b66e181b884c4279a38bc94eb22d22b2186cb5e26002c39acd89"
+  },
+  "point_3/pitt-val_pairwise_tie_probability.csv": {
+    "bytes": 599754,
+    "sha256": "ba54ac65eb47abbbffd8d53b6391df24dc0fed53fffaf7082aa4f54291396ba5"
+  },
+  "point_3/pitt-val_rank_intervals.pdf": {
+    "bytes": 26875,
+    "sha256": "100b3b6724f0c84989c1708aee97e90f267caf04546c598a213c0d221f390410"
+  },
+  "point_3/pitt-val_rank_intervals.png": {
+    "bytes": 130075,
+    "sha256": "058752e9409223e85b26e6fd2ec3d9306dcb9b957889cf7f688053cbc053763b"
+  },
+  "point_3/pitt-val_ranks.csv": {
+    "bytes": 288720,
+    "sha256": "1eed1d0981b5b2306085596743d6e097eb005bea05f5cf09138719c37bcedaff"
+  },
+  "point_3/pitt-val_ranks.npz": {
+    "bytes": 94773,
+    "sha256": "ddb0fbccacd16ff8fa7ea85fdf81e937ea107e92728c54e69afe5a7bea53e0aa"
+  },
+  "point_3/pitt-val_top_k_frequency.csv": {
+    "bytes": 130106,
+    "sha256": "17d617c89f2e35d3643113d7f866c3ecc55d515d8a0d1ab29e7dc0673b18299c"
+  },
+  "point_3/pitt-val_top_k_frequency.pdf": {
+    "bytes": 15121,
+    "sha256": "ff1ce2da985affd9a4eb072f2483e46461d054c2c6414618892701acc75b3e8d"
+  },
+  "point_3/pitt-val_top_k_frequency.png": {
+    "bytes": 57126,
+    "sha256": "2460470d4b131e43ea69640b0e33e8ebce2d35e96d215991bca0a3b0d9d58a2f"
+  },
+  "point_3/pitt-val_top_k_frequency_top46.csv": {
+    "bytes": 16098,
+    "sha256": "2ad9e838a2b452235ceef9b29200df0ad3b0a899af12a8288ad9679c6bece189"
+  },
+  "point_3/provenance.json": {
+    "bytes": 4862,
+    "sha256": "814c71798e3dcbc520044876c41b0e7e307d698f1ec7eea8a46e18353a7bf0ab"
+  },
+  "point_4/analysis.md": {
+    "bytes": 7743,
+    "sha256": "67f3e0b71fc6cbcf49d1ab247caf9d3a36d539acfa23a072173a6ae81d573aaa"
+  },
+  "point_4/metrics.json": {
+    "bytes": 2077,
+    "sha256": "3820c39b8760c336f7d35645ced81afbd15f1b8fc63137bce01e59123a7e7527"
+  },
+  "point_4/pitt-test_consensus.csv": {
+    "bytes": 116043,
+    "sha256": "f3972ebce09c4f52917fc2ed3a3144469cc1a78b25ab930ad688499211b2f93e"
+  },
+  "point_4/pitt-test_consensus_top46.csv": {
+    "bytes": 14028,
+    "sha256": "196d7ad839551c75d6ba46410eccd7af7154e4be24be628a4b6864cf51ce6cf8"
+  },
+  "point_4/pitt-test_expected_rank.csv": {
+    "bytes": 116043,
+    "sha256": "66931d7816df84bad921ebd09d07615ecf1306ab8d9575c170adf51a7304a34e"
+  },
+  "point_4/pitt-test_expected_rank_top46.csv": {
+    "bytes": 14037,
+    "sha256": "b71b2cf1650a027409d174b44ba0c2a4380e73fe403354af18fed8c1bcdb4ae9"
+  },
+  "point_4/pitt-test_heatmap_index.csv": {
+    "bytes": 38527,
+    "sha256": "12e8ae5d035d78e5f8e61ce4a82cebf66687a338bad00eeb8ef913bfb7272819"
+  },
+  "point_4/pitt-test_mean.csv": {
+    "bytes": 116043,
+    "sha256": "41f89b444ef21ad461c2d211bc600d407f32023d4fb946294772ca5a28b66e82"
+  },
+  "point_4/pitt-test_mean_top46.csv": {
+    "bytes": 14037,
+    "sha256": "278614a03e78b28364d78d945407eb3bd24d1c2f4151e4efcebde703293d3497"
+  },
+  "point_4/pitt-test_pairwise.npz": {
+    "bytes": 337339,
+    "sha256": "aa04e5691e8f32d752c1a68a997f5be3f0958ccd8c5f8be4adf29f8b95027a05"
+  },
+  "point_4/pitt-test_pairwise_heatmap.pdf": {
+    "bytes": 149341,
+    "sha256": "197cc6bafd2e4f6ff50ec4655030100e1bac50d0e59ef66b1433efd536508073"
+  },
+  "point_4/pitt-test_pairwise_heatmap.png": {
+    "bytes": 359504,
+    "sha256": "005387d3b74db26edc57b79eceebd7735ef7fc7b347f048ace176a1f275f3f4a"
+  },
+  "point_4/pitt-test_pairwise_probability.csv": {
+    "bytes": 1104760,
+    "sha256": "30cec382ffdd1c582a742ef4233f5aac81fa8a12b34179da162091fbd51cc39a"
+  },
+  "point_4/pitt-test_pairwise_tie_probability.csv": {
+    "bytes": 593574,
+    "sha256": "ba26f2814f1990e342c6158c128651a7aaa9e8b8d8caad23c09e1ff88f0f6966"
+  },
+  "point_4/pitt-test_solver.json": {
+    "bytes": 20852,
+    "sha256": "331a68d8516c290e0b725a075b3683275309f630f80ac19d03cbac6382a7bd01"
+  },
+  "point_4/pitt-test_top20_heatmap.pdf": {
+    "bytes": 32431,
+    "sha256": "f75007d89957f7608f5efde5d85ffb6ca2c00bc14bf9e1319b958bb11f2df08e"
+  },
+  "point_4/pitt-test_top20_heatmap.png": {
+    "bytes": 355851,
+    "sha256": "4937a93d976fd87b239447bfb25e75d8c22733636a4c0f108a7c6a56f83a3f7e"
+  },
+  "point_4/pitt-val_consensus.csv": {
+    "bytes": 115884,
+    "sha256": "b72989aa4a7373dee268cbc09cc9a012478822b9e45a361d6e1149d074dff0ef"
+  },
+  "point_4/pitt-val_consensus_top46.csv": {
+    "bytes": 14041,
+    "sha256": "7b2dea328aa0a79c31fdbacd6ab39d9297594752920f3733144cc14ef1ab18d8"
+  },
+  "point_4/pitt-val_expected_rank.csv": {
+    "bytes": 115884,
+    "sha256": "2d47c47c4884799d7a1c103ead22f363a1aa4efa5833e8463c3adaaeda3c010a"
+  },
+  "point_4/pitt-val_expected_rank_top46.csv": {
+    "bytes": 14041,
+    "sha256": "7414756151c44af28babe108e873788823db887112f84a043fa83236497646a4"
+  },
+  "point_4/pitt-val_heatmap_index.csv": {
+    "bytes": 38431,
+    "sha256": "f99dca8d65f15fd6ec260b9dead2bb6eb17a6cd9f92d3029b91acdd0ef34c897"
+  },
+  "point_4/pitt-val_mean.csv": {
+    "bytes": 115884,
+    "sha256": "e224783694fc9876be97bccb66c55474173b4ac70ad3d2d6258e60805b1969d1"
+  },
+  "point_4/pitt-val_mean_top46.csv": {
+    "bytes": 14041,
+    "sha256": "68118738022a1829a745b5daacf67d91b862c1af9818e9605603da6170e2260e"
+  },
+  "point_4/pitt-val_pairwise.npz": {
+    "bytes": 324109,
+    "sha256": "e184f3a2835bd3edb000eb8bf606804384f8dbfa2a3fb83e2206d70ac13fab0d"
+  },
+  "point_4/pitt-val_pairwise_heatmap.pdf": {
+    "bytes": 144263,
+    "sha256": "9d5d85cbfaa44dd70171afdf80fd3928f58a19ba7e11a5036b04c7d06c73dd8b"
+  },
+  "point_4/pitt-val_pairwise_heatmap.png": {
+    "bytes": 346182,
+    "sha256": "d784333850ef6dcc6d846461f06b079882045e7c370db30647ec8db99b574955"
+  },
+  "point_4/pitt-val_pairwise_probability.csv": {
+    "bytes": 1102508,
+    "sha256": "3b821fe11b05b66e181b884c4279a38bc94eb22d22b2186cb5e26002c39acd89"
+  },
+  "point_4/pitt-val_pairwise_tie_probability.csv": {
+    "bytes": 599754,
+    "sha256": "ba54ac65eb47abbbffd8d53b6391df24dc0fed53fffaf7082aa4f54291396ba5"
+  },
+  "point_4/pitt-val_solver.json": {
+    "bytes": 21616,
+    "sha256": "f2a4ff4ccf911e357806469e7805b4ae48607cceabeafd514ab3122fd34835e8"
+  },
+  "point_4/pitt-val_top20_heatmap.pdf": {
+    "bytes": 34039,
+    "sha256": "ad91a1fbbc6f1ae5e0a81722bd2b4bea114ede9557c2f0cb1d8660452d357551"
+  },
+  "point_4/pitt-val_top20_heatmap.png": {
+    "bytes": 338762,
+    "sha256": "0ae3cbd60894bb460ee7c6714a67d499c97edcbce93b826953449432cce7c21e"
+  },
+  "point_4/provenance.json": {
+    "bytes": 4862,
+    "sha256": "814c71798e3dcbc520044876c41b0e7e307d698f1ec7eea8a46e18353a7bf0ab"
+  }
+}
